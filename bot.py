@@ -35,6 +35,7 @@ from services.llm import ask_ollama, summarize_ollama, format_note_ollama, ping_
 from services.youtube import download_yt_audio, wants_diarize, transcribe_diarized
 from services.gdocs import gdocs_service, is_gdocs_enabled, save_to_gdocs
 from services.obsidian import is_obsidian_enabled, save_note
+from services.limits import check_openrouter, check_groq, format_limits_message
 
 # ──────────────────────────────────────────────
 # Telegram Bot
@@ -376,7 +377,8 @@ async def cmd_start(message: types.Message):
         "/stop — остановить текущую обработку (или напиши «стоп»)\n"
         "/clear — очистить историю диалога\n"
         "/model — текущая модель\n"
-        f"/ping — проверить Claude API{gdocs_line}",
+        f"/ping — проверить Claude API\n"
+        f"/limits — лимиты бесплатных API{gdocs_line}",
     )
 
 
@@ -490,6 +492,41 @@ async def cmd_ping(message: types.Message):
     except Exception as e:
         logger.error("Claude ping failed: %s", e)
         await message.answer(f"❌ Claude API недоступна: {e}")
+
+
+@dp.message(Command("limits"))
+async def cmd_limits(message: types.Message):
+    logger.info("/limits from user_id=%d", message.from_user.id)
+    if not is_allowed(message.from_user.id):
+        return
+    status_msg = await message.answer("🔍 Проверяю лимиты...")
+    try:
+        or_data, groq_data = None, None
+        or_error, groq_error = None, None
+        try:
+            or_data = await check_openrouter()
+        except Exception as e:
+            logger.warning("OpenRouter limits check failed: %s", e)
+            or_error = str(e)
+        try:
+            groq_data = await check_groq()
+        except Exception as e:
+            logger.warning("Groq limits check failed: %s", e)
+            groq_error = str(e)
+
+        text = format_limits_message(or_data, groq_data)
+        errors = []
+        if or_error:
+            errors.append(f"OpenRouter: {or_error}")
+        if groq_error:
+            errors.append(f"Groq: {groq_error}")
+        if errors:
+            text += "\n\n⚠️ Ошибки:\n" + "\n".join(errors)
+
+        await status_msg.edit_text(text, parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        logger.exception("Limits command error")
+        await status_msg.edit_text(f"❌ Ошибка: {e}")
 
 
 # ──────────────────────────────────────────────
