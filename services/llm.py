@@ -9,7 +9,7 @@ import time
 
 import openai
 
-from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, SYSTEM_PROMPT, SUMMARY_PROMPTS, MAX_SUMMARY_TEXT, NOTE_PROMPT
+from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, MAX_SUMMARY_TEXT, NOTE_PROMPT, SUMMARY_PROMPTS, SYSTEM_PROMPT
 from state import add_to_history, get_history
 
 logger = logging.getLogger(__name__)

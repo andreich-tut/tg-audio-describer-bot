@@ -32,7 +32,7 @@ WHISPER_MODEL = os.getenv("WHISPER_MODEL", "medium")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cuda")
 
 sys.path.insert(0, str(Path(__file__).parent))
-from transcribe_diarize import setup_logging, transcribe_file, format_transcript
+from transcribe_diarize import format_transcript, setup_logging, transcribe_file
 
 AUDIO_EXTENSIONS = {".webm", ".ogg", ".mp3", ".wav", ".m4a", ".mp4", ".mkv", ".flac"}
 

@@ -4,7 +4,7 @@ API limits checker for free-tier services: OpenRouter (LLM) and Groq (STT).
 
 import httpx
 
-from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, GROQ_API_KEY, WHISPER_BACKEND
+from config import GROQ_API_KEY, LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, WHISPER_BACKEND
 
 
 async def check_openrouter() -> dict | None:

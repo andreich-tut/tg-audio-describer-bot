@@ -27,7 +27,7 @@ import argparse
 import logging
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -100,6 +100,7 @@ def transcribe_file(
 
     # Free GPU memory
     import gc
+
     import torch
     del model
     gc.collect()

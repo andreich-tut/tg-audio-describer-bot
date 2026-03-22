@@ -1,4 +1,6 @@
-import subprocess, os, math, sys
+import math
+import os
+import subprocess
 
 INPUT = "./test/oleg-couch.webm"
 MAX_MB = 18

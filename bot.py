@@ -16,32 +16,44 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from aiogram import Bot, Dispatcher, types, F
-from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.filters import CommandStart, Command
+from aiogram import Bot, Dispatcher, F, types
 from aiogram.enums import ParseMode
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, BufferedInputFile, BotCommand
+from aiogram.filters import Command, CommandStart
+from aiogram.types import BotCommand, BufferedInputFile, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
 from config import (
-    BOT_TOKEN, TOR_PROXY, LLM_MODEL, WHISPER_MODEL, WHISPER_DEVICE,
-    ALLOWED_USER_IDS, GDOCS_DOCUMENT_ID, YT_URL_RE, HF_TOKEN,
-    is_allowed, logger,
+    ALLOWED_USER_IDS,
+    BOT_TOKEN,
+    GDOCS_DOCUMENT_ID,
+    HF_TOKEN,
+    LLM_MODEL,
+    WHISPER_DEVICE,
+    WHISPER_MODEL,
+    YT_URL_RE,
+    is_allowed,
+    logger,
 )
-from state import (
-    get_history, clear_history, get_mode, user_modes, user_gdocs,
-    yt_transcripts, cleanup_yt_cache, active_tasks,
-)
-from services.stt import transcribe
-from services.llm import ask_ollama, summarize_ollama, format_note_ollama, ping_llm
-from services.youtube import download_yt_audio, wants_diarize, transcribe_diarized
 from services.gdocs import gdocs_service, is_gdocs_enabled, save_to_gdocs
+from services.limits import check_groq, check_openrouter, format_limits_message
+from services.llm import ask_ollama, format_note_ollama, ping_llm, summarize_ollama
 from services.obsidian import is_obsidian_enabled, save_note
-from services.limits import check_openrouter, check_groq, format_limits_message
+from services.stt import transcribe
+from services.youtube import download_yt_audio, transcribe_diarized, wants_diarize
+from state import (
+    active_tasks,
+    cleanup_yt_cache,
+    clear_history,
+    get_history,
+    get_mode,
+    user_gdocs,
+    user_modes,
+    yt_transcripts,
+)
 
 # ──────────────────────────────────────────────
 # Telegram Bot
 # ──────────────────────────────────────────────
-bot = Bot(token=BOT_TOKEN, session=AiohttpSession(proxy=TOR_PROXY) if TOR_PROXY else None)
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 

@@ -17,8 +17,6 @@ load_dotenv()
 # Telegram
 # ──────────────────────────────────────────────
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-TOR_PROXY = os.getenv("TOR_PROXY", "")  # e.g. socks5://127.0.0.1:9050
-
 # ──────────────────────────────────────────────
 # LLM (OpenAI-compatible: OpenRouter, DashScope, Ollama, etc.)
 # ──────────────────────────────────────────────

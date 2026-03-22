@@ -10,7 +10,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from config import YT_MAX_DURATION, YT_COOKIES_FILE, HF_TOKEN
+from config import HF_TOKEN, YT_COOKIES_FILE, YT_MAX_DURATION
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ async def transcribe_diarized(file_path: str) -> str:
     """Run whisperX diarization pipeline in a thread. Returns formatted transcript."""
     import sys as _sys
     _sys.path.insert(0, str(Path(__file__).parent.parent / "tools"))
-    from transcribe_diarize import transcribe_file, format_transcript
+    from transcribe_diarize import format_transcript, transcribe_file
 
     loop = asyncio.get_event_loop()
     segments = await loop.run_in_executor(

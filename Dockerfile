@@ -1,6 +1,13 @@
 FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y ffmpeg tor && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg curl gpg && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg \
+      | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ bookworm main" \
+      > /etc/apt/sources.list.d/cloudflare-client.list && \
+    apt-get update && apt-get install -y cloudflare-warp && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -9,4 +16,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["sh", "-c", "tor 2>&1 | tee /tmp/tor.log &\nuntil grep -q 'Bootstrapped 100%' /tmp/tor.log 2>/dev/null; do sleep 1; done\nexec python bot.py"]
+RUN chmod +x /app/docker-entrypoint.sh
+CMD ["/app/docker-entrypoint.sh"]
