@@ -4,9 +4,6 @@ set -e
 IMAGE=tg-voice
 CONTAINER=tg-voice
 
-echo "Pulling latest changes..."
-git pull
-
 echo "Rebuilding image..."
 docker build -t "$IMAGE" .
 
