@@ -14,13 +14,10 @@ fi
 docker run -d \
   --name "$CONTAINER" \
   --env-file .env \
-  --privileged \
+  --cap-add NET_ADMIN \
+  --device /dev/net/tun \
   -v warp-data:/var/lib/cloudflare-warp \
   --restart unless-stopped \
   "$IMAGE"
 
 echo "Bot started. Logs: docker logs -f $CONTAINER"
-
-# docker logs -f tg-voice     # live logs
-# docker stop tg-voice        # stop bot
-# docker restart tg-voice     # restart without rebuild

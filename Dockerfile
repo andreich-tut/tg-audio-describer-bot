@@ -17,4 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN chmod +x /app/docker-entrypoint.sh
+
+HEALTHCHECK --interval=30s --timeout=5s CMD pgrep -f "python bot.py" || exit 1
+
 CMD ["/app/docker-entrypoint.sh"]

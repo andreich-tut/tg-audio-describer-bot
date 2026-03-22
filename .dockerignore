@@ -19,6 +19,13 @@ www.youtube.com_cookies.txt
 # Whisper model cache (downloaded at runtime into ~/.cache)
 models/
 
+# Host-side scripts (not needed in container)
+start.sh
+update.sh
+
+# Docs
+*.md
+
 .git/
 .vscode/
 .idea/
