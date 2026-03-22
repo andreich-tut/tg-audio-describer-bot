@@ -739,7 +739,10 @@ async def main():
     ]
     if gdocs_service:
         commands.append(BotCommand(command="savedoc", description="Сохранять расшифровки в Google Docs"))
-    await bot.set_my_commands(commands)
+    try:
+        await bot.set_my_commands(commands)
+    except Exception as e:
+        logger.warning("Failed to set bot commands: %s", e)
     await dp.start_polling(bot)
 
 
