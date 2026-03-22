@@ -17,12 +17,13 @@ from datetime import datetime
 from pathlib import Path
 
 from aiogram import Bot, Dispatcher, types, F
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.filters import CommandStart, Command
 from aiogram.enums import ParseMode
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, BufferedInputFile
 
 from config import (
-    BOT_TOKEN, LLM_MODEL, WHISPER_MODEL, WHISPER_DEVICE,
+    BOT_TOKEN, TOR_PROXY, LLM_MODEL, WHISPER_MODEL, WHISPER_DEVICE,
     ALLOWED_USER_IDS, GDOCS_DOCUMENT_ID, YT_URL_RE, HF_TOKEN,
     is_allowed, logger,
 )
@@ -40,7 +41,7 @@ from services.limits import check_openrouter, check_groq, format_limits_message
 # ──────────────────────────────────────────────
 # Telegram Bot
 # ──────────────────────────────────────────────
-bot = Bot(token=BOT_TOKEN)
+bot = Bot(token=BOT_TOKEN, session=AiohttpSession(proxy=TOR_PROXY) if TOR_PROXY else None)
 dp = Dispatcher()
 
 
