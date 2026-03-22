@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["sh", "-c", "tor &\nsleep 5\nexec python bot.py"]
+CMD ["sh", "-c", "tor > /tmp/tor.log 2>&1 &\nuntil grep -q 'Bootstrapped 100%' /tmp/tor.log 2>/dev/null; do sleep 1; done\nexec python bot.py"]
