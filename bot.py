@@ -36,7 +36,7 @@ from services.llm import ask_ollama, summarize_ollama, format_note_ollama, ping_
 from services.youtube import download_yt_audio, wants_diarize, transcribe_diarized
 from services.gdocs import gdocs_service, is_gdocs_enabled, save_to_gdocs
 from services.obsidian import is_obsidian_enabled, save_note
-from services.limits import check_openrouter, check_groq, format_limits_message
+from services.limits import check_openouter, check_groq, format_limits_message
 
 # ──────────────────────────────────────────────
 # Telegram Bot
