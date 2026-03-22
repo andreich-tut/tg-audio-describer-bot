@@ -1,0 +1,28 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Secrets — pass via env vars or --env-file at runtime
+.env
+service-account-key.json
+*-credentials.json
+*-key.json
+www.youtube.com_cookies.txt
+
+# Temp audio files
+*.ogg
+*.wav
+*.mp3
+
+# Whisper model cache (downloaded at runtime into ~/.cache)
+models/
+
+.git/
+.vscode/
+.idea/
+.claude/
+logs/
+tests/
+test/
