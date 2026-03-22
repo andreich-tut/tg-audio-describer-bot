@@ -1,193 +1,170 @@
-# 🎙 Telegram Voice → LLM Bot
+# Telegram Voice → LLM Bot
 
-Локальный Telegram-бот: голосовые сообщения → faster-whisper (STT) → LLM (OpenRouter / Ollama / любой OpenAI-совместимый API) → текстовый ответ.
+Local Telegram bot: voice messages → faster-whisper (STT) → LLM (OpenRouter / any OpenAI-compatible API) → text reply.
 
-## Требования
+## Requirements
 
-- Python 3.11+
-- Telegram Bot Token (получить у [@BotFather](https://t.me/BotFather))
-- API-ключ LLM: [OpenRouter](https://openrouter.ai/keys) (есть бесплатные модели) или другой OpenAI-совместимый провайдер
-- STT (на выбор):
-  - **Локально**: NVIDIA GPU с CUDA + faster-whisper (или CPU — медленнее)
-  - **Облако**: бесплатный API-ключ [Groq](https://console.groq.com) (без GPU)
+- Python 3.11+ (or Docker)
+- Telegram Bot Token (from [@BotFather](https://t.me/BotFather))
+- LLM API key: [OpenRouter](https://openrouter.ai/keys) (has free models) or any OpenAI-compatible provider
+- STT — choose one:
+  - **Local**: NVIDIA GPU with CUDA + faster-whisper (or CPU, slower)
+  - **Cloud**: free [Groq](https://console.groq.com) API key (no GPU needed)
 
-## Быстрый старт
+## Quick start
+
+### Docker (recommended)
 
 ```bash
-# 1. Клонируй / скопируй проект
-cd telegram-voice-llm
-
-# 2. Создай venv
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate   # Windows
-
-# 3. Установи зависимости
-pip install -r requirements.txt
-
-# 4. Настрой конфиг
 cp .env.example .env
-# Обязательно: вставь BOT_TOKEN и LLM_API_KEY
-# Опционально: свой user ID в ALLOWED_USERS, путь к vault в OBSIDIAN_VAULT_PATH
+# Fill in BOT_TOKEN and LLM_API_KEY at minimum
+./start.sh
+```
 
-# 5. Запусти бота
+Logs: `docker logs -f tg-voice`
+
+### Python
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements-local.txt   # includes faster-whisper
+# or: pip install -r requirements.txt   # without local STT
+cp .env.example .env
+# Fill in BOT_TOKEN and LLM_API_KEY
 python bot.py
 ```
 
-## Команды бота
+## Bot commands
 
-| Команда    | Описание                                                      |
-|------------|---------------------------------------------------------------|
-| `/start`   | Приветствие и инструкция                                      |
-| `/mode`    | Переключить режим: чат / только расшифровка / Obsidian-заметка |
-| `/clear`   | Очистить историю диалога                                      |
-| `/model`   | Показать текущую модель                                       |
-| `/ping`    | Проверить доступность LLM API                                 |
-| `/savedoc` | Включить/выключить сохранение в Google Docs                   |
+| Command    | Description                                            |
+|------------|--------------------------------------------------------|
+| `/start`   | Help and available commands                            |
+| `/mode`    | Switch mode: chat / transcribe only / Obsidian note    |
+| `/stop`    | Cancel current processing (also works as plain text)   |
+| `/clear`   | Clear conversation history                             |
+| `/model`   | Show current LLM and Whisper models                    |
+| `/ping`    | Check LLM API availability                             |
+| `/limits`  | Show free-tier API usage (OpenRouter, Groq)            |
+| `/savedoc` | Toggle saving transcripts to Google Docs               |
 
-## Использование
+## Usage
 
-1. Отправь голосовое сообщение — бот распознает речь и ответит
-2. Или просто напиши текстом — бот ответит через LLM
-3. Отправь ссылку на YouTube — получишь расшифровку файлом + саммари с выбором формата
-4. Бот помнит контекст диалога (последние 20 пар сообщений)
+1. Send a voice message — the bot transcribes and responds
+2. Send plain text — the bot responds via LLM
+3. Send a YouTube link — get a transcript file + summarization with selectable detail levels
+   - Add the word "speakers" / "спикеры" to enable speaker diarization
+4. Reply to a voice/audio message with text — processes that audio
 
-### Режимы (`/mode`)
+### Modes (`/mode`)
 
-| Режим            | Поведение                                                              |
-|------------------|------------------------------------------------------------------------|
-| 💬 Чат           | Расшифровка голоса → LLM → ответ (по умолчанию)                       |
-| 🎙 Расшифровка   | Только распознавание речи, без LLM                                     |
-| 📓 Заметка       | Голос → структурированная Obsidian-заметка (Markdown) через LLM; автосохранение в vault если настроен |
+| Mode              | Behavior                                                                    |
+|-------------------|-----------------------------------------------------------------------------|
+| Chat (default)    | Voice → transcribe → LLM → reply                                           |
+| Transcribe only   | Voice → transcribe → return raw text, no LLM                               |
+| Obsidian note     | Voice → LLM → structured Markdown note; auto-saved to vault if configured  |
 
-## Настройки Whisper (STT)
+## Configuration
 
-Бэкенд выбирается в `.env` переменной `WHISPER_BACKEND`:
-
-### Локальный (WHISPER_BACKEND=local)
-
-Запускает faster-whisper локально. Требует GPU (или CPU — медленнее).
-
-| Модель     | VRAM   | Скорость | Качество RU |
-|------------|--------|----------|-------------|
-| `tiny`     | ~1 GB  | ⚡⚡⚡   | ★★☆☆☆       |
-| `small`    | ~2 GB  | ⚡⚡     | ★★★☆☆       |
-| `medium`   | ~5 GB  | ⚡       | ★★★★☆       |
-| `large-v3` | ~10 GB | 🐢       | ★★★★★       |
-
-С RTX 4070 Ti Super (16GB) можно спокойно использовать `large-v3`.
-
-### Облако — Groq (WHISPER_BACKEND=groq)
-
-Использует `whisper-large-v3` через Groq API. Бесплатно, без GPU, качество как `large-v3`.
-
-1. Зарегистрируйся на [console.groq.com](https://console.groq.com)
-2. Создай API-ключ (API Keys → Create)
-3. Добавь в `.env`:
-   ```
-   WHISPER_BACKEND=groq
-   GROQ_API_KEY=gsk_your_key_here
-   ```
-
-## Obsidian vault (опционально)
-
-Бот может автоматически сохранять заметки (режим 📓) в Obsidian vault. Поддерживаются два режима:
-
-### Вариант 1 — Локальная папка (через клиент Яндекс.Диска)
-
-1. Убедись, что папка vault доступна локально (Яндекс.Диск синхронизирован).
-2. Добавь в `.env`:
-   ```
-   OBSIDIAN_VAULT_PATH=/home/user/YandexDisk/ObsidianVault
-   OBSIDIAN_INBOX_FOLDER=Inbox
-   ```
-
-### Вариант 2 — Яндекс.Диск WebDAV (прямой доступ к облаку)
-
-Не требует установки клиента Яндекс.Диска — файлы загружаются напрямую через WebDAV API.
-
-1. Создай пароль приложения: [id.yandex.ru/security/app-passwords](https://id.yandex.ru/security/app-passwords)
-2. Добавь в `.env`:
-   ```
-   YANDEX_DISK_LOGIN=yourname@yandex.ru
-   YANDEX_DISK_PASSWORD=your_app_password
-   YANDEX_DISK_PATH=ObsidianVault
-   OBSIDIAN_INBOX_FOLDER=Inbox
-   ```
-
-> Если заданы оба варианта — WebDAV имеет приоритет.
-
-Файлы сохраняются как `YYYY-MM-DD-название.md` с YAML-фронтматтером (date, time, tags). Если vault не настроен — заметки только отправляются в Telegram.
-
----
-
-## Google Docs (опционально)
-
-Бот может сохранять расшифровки голосовых сообщений в Google Docs.
-
-### Настройка
-
-1. **Создай сервисный аккаунт** в [Google Cloud Console](https://console.cloud.google.com/):
-   - IAM & Admin → Service Accounts → Create
-   - Скачай JSON-ключ (Actions → Manage keys → Add key → JSON)
-
-2. **Включи Google Docs API** в своём GCP-проекте:
-   - APIs & Services → Enable APIs → поиск "Google Docs API" → Enable
-
-3. **Открой нужный Google Doc** и поделись им с email сервисного аккаунта (`...@....iam.gserviceaccount.com`) с ролью **Editor**.
-
-4. **Скопируй ID документа** из URL:
-   ```
-   https://docs.google.com/document/d/<DOCUMENT_ID>/edit
-   ```
-
-5. **Добавь в `.env`**:
-   ```
-   GDOCS_CREDENTIALS_FILE=/absolute/path/to/service-account-key.json
-   GDOCS_DOCUMENT_ID=your_document_id_here
-   ```
-
-6. **Перезапусти бота** — в логах появится: `Google Docs integration enabled.`
-
-### Использование
+All settings via `.env` (template: `.env.example`):
 
 ```
-/savedoc   — включить сохранение расшифровок в документ
-/savedoc   — повторно — выключить
+BOT_TOKEN=                    # required
+LLM_API_KEY=                  # required — OpenRouter key or other provider
+LLM_BASE_URL=https://openrouter.ai/api/v1
+LLM_MODEL=qwen/qwen3-235b-a22b:free
+
+WHISPER_BACKEND=local         # "local" or "groq"
+WHISPER_MODEL=medium          # tiny / small / medium / large-v3
+WHISPER_DEVICE=cuda           # cuda or cpu
+
+ALLOWED_USERS=                # comma-separated Telegram user IDs (empty = allow all)
+SYSTEM_PROMPT=                # optional: override the default system prompt
 ```
 
-Каждая расшифровка добавляется в конец документа в формате:
+### LLM providers
+
+`LLM_BASE_URL` + `LLM_API_KEY` accept any OpenAI-compatible endpoint:
+
+| Provider   | `LLM_BASE_URL`                      | Notes                             |
+|------------|--------------------------------------|-----------------------------------|
+| OpenRouter | `https://openrouter.ai/api/v1`       | Default; many free models         |
+| Ollama     | `http://localhost:11434/v1`          | Local; set `LLM_API_KEY=ollama`   |
+| DashScope  | `https://dashscope.aliyuncs.com/compatible-mode/v1` | Alibaba Cloud |
+| Any other  | your endpoint                        | Must be OpenAI-compatible         |
+
+### Whisper STT
+
+| Model      | VRAM    | Speed | Quality (RU) |
+|------------|---------|-------|--------------|
+| `tiny`     | ~1 GB   | +++   | low          |
+| `small`    | ~2 GB   | ++    | fair         |
+| `medium`   | ~5 GB   | +     | good         |
+| `large-v3` | ~10 GB  | slow  | best         |
+
+For cloud STT without a GPU, set `WHISPER_BACKEND=groq` and add `GROQ_API_KEY=` to `.env`.
+
+## Obsidian vault (optional)
+
+In note mode, the bot formats voice as a structured Markdown note and can save it automatically.
+
+**Option 1 — Local path** (via Yandex.Disk or any sync client):
 ```
-[2026-03-15 09:41 UTC] @username
-Текст расшифровки голосового сообщения...
-
+OBSIDIAN_VAULT_PATH=/home/user/YandexDisk/ObsidianVault
+OBSIDIAN_INBOX_FOLDER=Inbox
 ```
 
-## Безопасность
+**Option 2 — Yandex.Disk WebDAV** (direct cloud upload, no sync client needed):
+```
+YANDEX_DISK_LOGIN=yourname@yandex.ru
+YANDEX_DISK_PASSWORD=your_app_password   # create at id.yandex.ru/security/app-passwords
+YANDEX_DISK_PATH=ObsidianVault
+OBSIDIAN_INBOX_FOLDER=Inbox
+```
 
-- Обязательно задай `ALLOWED_USERS` в `.env` чтобы ограничить доступ
-- Узнать свой Telegram ID: написать [@userinfobot](https://t.me/userinfobot)
-- Бот хранит историю только в RAM, при перезапуске всё сбрасывается
+WebDAV takes priority if both are set. Notes are saved as `YYYY-MM-DD-title.md` with YAML front-matter.
 
-## Архитектура
+## Google Docs (optional)
+
+Save voice transcripts to a Google Doc automatically.
+
+1. Create a service account in [Google Cloud Console](https://console.cloud.google.com/) → IAM & Admin → Service Accounts → Create; download the JSON key
+2. Enable the Google Docs API in your project
+3. Share the target document with the service account email (Editor role)
+4. Copy the document ID from the URL: `.../document/d/<ID>/edit`
+5. Add to `.env`:
+   ```
+   GDOCS_CREDENTIALS_FILE=/path/to/service-account.json
+   GDOCS_DOCUMENT_ID=your_document_id
+   ```
+
+Use `/savedoc` in the bot to toggle saving on/off per user.
+
+## Security
+
+- Set `ALLOWED_USERS` in `.env` to restrict access to specific Telegram IDs
+- Find your ID: message [@userinfobot](https://t.me/userinfobot)
+- Conversation history is in-memory only — cleared on restart
+
+## Architecture
 
 ```
-Telegram Voice → download .ogg → STT (local: faster-whisper / cloud: Groq) → текст
-                                                                               ↓
-                                               чат: LLM API (OpenRouter) ← текст + история
-                                               расшифровка: вернуть текст
-                                               заметка: LLM → Markdown → Telegram + Obsidian vault
+Voice message → download .ogg → STT (local: faster-whisper / cloud: Groq) → text
+                                                                              |
+                                         chat: text + history → LLM API → reply
+                                         transcribe: return text as-is
+                                         note: LLM → Markdown → Telegram + vault
 ```
 
 ---
 
-## CLI-инструменты ([tools/](tools/))
+## CLI tools ([tools/](tools/))
 
-Утилиты для работы с аудиофайлами локально, без запуска бота. Подробная документация: [tools/README.md](tools/README.md).
+Standalone utilities for working with audio files locally. Full docs: [tools/README.md](tools/README.md).
 
-### transcribe_cli.py — Простая расшифровка
+### transcribe_cli.py
 
-Транскрибирует файлы той же моделью Whisper что и бот. Ollama не нужна.
+Transcribes files using the same Whisper model as the bot.
 
 ```bash
 python tools/transcribe_cli.py recording.ogg
@@ -195,42 +172,31 @@ python tools/transcribe_cli.py lecture.webm -o result.txt
 python tools/transcribe_cli.py part1.webm part2.webm part3.webm -o result.txt
 ```
 
-### transcribe_diarize.py — Расшифровка с определением спикеров
+### transcribe_diarize.py
 
-Транскрибирует аудио и помечает кто что сказал, используя whisperX + pyannote.audio.
+Transcribes audio and labels speakers using whisperX + pyannote.audio.
 
 ```bash
-pip install whisperx  # установить один раз
+pip install whisperx   # one-time
 
 python tools/transcribe_diarize.py meeting.mp3
 python tools/transcribe_diarize.py meeting.mp3 --min-speakers 2 --max-speakers 3 -o transcript.txt
 ```
 
-Вывод:
-```
-[00:00:01 - 00:00:05] SPEAKER_00: Привет, как дела?
-[00:00:06 - 00:00:09] SPEAKER_01: Всё хорошо, спасибо.
-```
+Requires `HF_TOKEN` in `.env` (free HuggingFace token). See [tools/README.md](tools/README.md) for setup.
 
-Требует `HF_TOKEN` в `.env` (бесплатный токен HuggingFace). См. [tools/README.md](tools/README.md) для настройки.
+### audio_splitter.py
 
-### audio_splitter.py — Разбивка больших файлов
-
-Разбивает аудио/видео файл на части с помощью ffmpeg.
+Splits large audio/video files with ffmpeg.
 
 ```bash
 python tools/audio_splitter.py lecture.webm --minutes 5
 ```
 
-Результат: `lecture_000.webm`, `lecture_001.webm`, ... — рядом с исходным файлом.
+### send_chunks.py
 
-### send_chunks.py — Отправка больших файлов боту
-
-Telegram Bot API ограничивает загрузку файлов до 20 МБ. Этот инструмент разбивает файл и отправляет чанки боту напрямую.
+Splits a file and sends each chunk to the bot directly via Telegram API. Useful for files over 20 MB.
 
 ```bash
 python tools/send_chunks.py big_recording.webm 123456789
 ```
-
-- `chat_id` — твой Telegram ID (узнать: [@userinfobot](https://t.me/userinfobot))
-- Требует `BOT_TOKEN` в `.env` и `ffmpeg`/`ffprobe`
