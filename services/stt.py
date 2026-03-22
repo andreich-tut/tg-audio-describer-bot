@@ -56,6 +56,8 @@ async def _transcribe_groq(file_path: str) -> str:
                 files={"file": (Path(file_path).name, f, "audio/ogg")},
                 data={"model": "whisper-large-v3", "language": "ru"},
             )
+    if not response.is_success:
+        logger.error("Groq API error %d: %s", response.status_code, response.text)
     response.raise_for_status()
     text = response.json()["text"]
     logger.info("Groq transcription done, text_len=%d", len(text))
