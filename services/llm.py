@@ -3,6 +3,7 @@ LLM: OpenAI-compatible chat (with history) and one-shot summarization.
 Works with OpenRouter, Alibaba DashScope, Ollama, or any OpenAI-compatible endpoint.
 """
 
+import asyncio
 import logging
 import time
 
@@ -13,7 +14,27 @@ from state import add_to_history, get_history
 
 logger = logging.getLogger(__name__)
 
-_client = openai.AsyncOpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+_client = openai.AsyncOpenAI(
+    api_key=LLM_API_KEY,
+    base_url=LLM_BASE_URL,
+    default_headers={
+        "HTTP-Referer": "https://github.com/tg-voice-bot",
+        "X-Title": "TG Voice Bot",
+    },
+)
+
+
+async def _chat_with_retry(**kwargs) -> openai.types.chat.ChatCompletion:
+    """Call chat.completions.create with exponential backoff on rate limit errors."""
+    delays = [5, 15, 30]
+    for attempt, delay in enumerate(delays + [None]):
+        try:
+            return await _client.chat.completions.create(**kwargs)
+        except openai.RateLimitError:
+            if delay is None:
+                raise
+            logger.warning("Rate limited (attempt %d/%d), retrying in %ds...", attempt + 1, len(delays), delay)
+            await asyncio.sleep(delay)
 
 
 async def ask_ollama(user_id: int, user_message: str) -> str:
@@ -24,7 +45,7 @@ async def ask_ollama(user_id: int, user_message: str) -> str:
                 user_id, len(get_history(user_id)), len(user_message))
     t0 = time.time()
 
-    msg = await _client.chat.completions.create(
+    msg = await _chat_with_retry(
         model=LLM_MODEL,
         max_tokens=4096,
         messages=[{"role": "system", "content": SYSTEM_PROMPT}] + get_history(user_id),
@@ -51,7 +72,7 @@ async def summarize_ollama(text: str, detail_level: str, title: str = "") -> str
 
     user_content = f"Видео: {title}\n\nТекст:\n{text}" if title else text
 
-    msg = await _client.chat.completions.create(
+    msg = await _chat_with_retry(
         model=LLM_MODEL,
         max_tokens=4096,
         messages=[
@@ -74,7 +95,7 @@ async def format_note_ollama(text: str) -> tuple[str, list[str], str]:
     logger.info("Note format request: text_len=%d", len(text))
     t0 = time.time()
 
-    msg = await _client.chat.completions.create(
+    msg = await _chat_with_retry(
         model=LLM_MODEL,
         max_tokens=4096,
         messages=[
@@ -107,7 +128,7 @@ async def format_note_ollama(text: str) -> tuple[str, list[str], str]:
 
 async def ping_llm() -> str:
     """Test LLM API connectivity. Returns model name on success."""
-    await _client.chat.completions.create(
+    await _chat_with_retry(
         model=LLM_MODEL,
         max_tokens=5,
         messages=[{"role": "user", "content": "ping"}],

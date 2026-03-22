@@ -394,7 +394,7 @@ async def cmd_ping(message: types.Message):
         return
     try:
         model = await ping_llm()
-        await message.answer(f"✅ Claude API доступна.\nМодель: {model}")
+        await message.answer(f"✅ LLM API доступна.\nМодель: {model}")
     except Exception as e:
         logger.error("Claude ping failed: %s", e)
         await message.answer(f"❌ Claude API недоступна: {e}")
