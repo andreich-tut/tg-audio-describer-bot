@@ -13,18 +13,17 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 
 from config import (
+    ALLOWED_USER_IDS,
     BOT_TOKEN,
-    GDOCS_DOCUMENT_ID,
     LLM_MODEL,
     WHISPER_DEVICE,
     WHISPER_MODEL,
-    ALLOWED_USER_IDS,
     logger,
 )
-from services.gdocs import gdocs_service
 from handlers.commands import router as commands_router
-from handlers.youtube_callbacks import router as youtube_callbacks_router
 from handlers.messages import router as messages_router
+from handlers.youtube_callbacks import router as youtube_callbacks_router
+from services.gdocs import gdocs_service
 
 # Telegram Bot
 bot = Bot(token=BOT_TOKEN)

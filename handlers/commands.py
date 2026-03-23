@@ -6,23 +6,27 @@ Callback handlers: mode:*, cancel
 from aiogram import F, Router, types
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
-from aiogram.types import BotCommand, CallbackQuery
+from aiogram.types import CallbackQuery
 
 from config import (
-    ALLOWED_USER_IDS,
-    BOT_TOKEN,
     GDOCS_DOCUMENT_ID,
     LLM_MODEL,
     WHISPER_MODEL,
     is_allowed,
     logger,
 )
-from core.keyboards import mode_keyboard, MODE_LABELS, MODE_DESCRIPTIONS
+from core.keyboards import MODE_DESCRIPTIONS, MODE_LABELS, mode_keyboard
 from services.gdocs import gdocs_service
 from services.limits import check_groq, check_openrouter, format_limits_message
 from services.llm import ping_llm
-from state import active_tasks, clear_history, get_history, get_mode, user_gdocs, user_modes
-
+from state import (
+    active_tasks,
+    clear_history,
+    get_history,
+    get_mode,
+    user_gdocs,
+    user_modes,
+)
 
 router = Router(name="commands")
 

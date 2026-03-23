@@ -15,19 +15,15 @@ from aiogram import Bot, types
 from aiogram.enums import ParseMode
 from aiogram.types import BufferedInputFile
 
-from config import (
-    GDOCS_DOCUMENT_ID,
-    HF_TOKEN,
-    logger,
-)
+from config import HF_TOKEN, logger
 from core.helpers import escape_md
-from core.keyboards import yt_summary_keyboard, stop_keyboard
+from core.keyboards import stop_keyboard, yt_summary_keyboard
 from services.gdocs import is_gdocs_enabled, save_to_gdocs
 from services.llm import ask_ollama, format_note_ollama, summarize_ollama
 from services.obsidian import is_obsidian_enabled, save_note
 from services.stt import transcribe
 from services.youtube import download_yt_audio, transcribe_diarized
-from state import cleanup_yt_cache, get_mode, user_gdocs, yt_transcripts
+from state import cleanup_yt_cache, get_mode, yt_transcripts
 
 
 async def process_youtube(message: types.Message, url: str, diarize: bool):
@@ -194,14 +190,14 @@ async def process_audio(message: types.Message, bot: Bot, file_id: str, suffix: 
             return
 
         # Chat mode — send to LLM
-        await processing_msg.edit_text(f"📝 _{_escape_md(user_text)}_\n\n⏳ Думаю...", parse_mode=ParseMode.MARKDOWN)
+        await processing_msg.edit_text(f"📝 _{escape_md(user_text)}_\n\n⏳ Думаю...", parse_mode=ParseMode.MARKDOWN)
 
         response = await ask_ollama(message.from_user.id, user_text)
 
-        full_text = f"📝 *Распознано:*\n_{_escape_md(user_text)}_\n\n🤖 *Ответ:*\n{response}"
+        full_text = f"📝 *Распознано:*\n_{escape_md(user_text)}_\n\n🤖 *Ответ:*\n{response}"
         if len(full_text) > 4000:
             await processing_msg.edit_text(
-                f"📝 _{_escape_md(user_text)}_", parse_mode=ParseMode.MARKDOWN, reply_markup=None
+                f"📝 _{escape_md(user_text)}_", parse_mode=ParseMode.MARKDOWN, reply_markup=None
             )
             for i in range(0, len(response), 4000):
                 await message.answer(response[i : i + 4000])

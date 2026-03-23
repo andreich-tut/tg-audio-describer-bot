@@ -12,7 +12,6 @@ from core.pipelines import process_audio, process_text, process_youtube
 from services.youtube import wants_diarize
 from state import active_tasks
 
-
 router = Router(name="messages")
 
 

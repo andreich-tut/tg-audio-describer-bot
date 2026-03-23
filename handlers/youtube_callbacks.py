@@ -4,15 +4,14 @@ YouTube callback handlers: yt:* for summary detail level selection.
 
 import time
 
-from aiogram import F, Router, types
+from aiogram import F, Router
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 
 from config import logger
-from core.keyboards import yt_summary_keyboard, YT_LEVEL_MAP, YT_LEVEL_LABELS
+from core.keyboards import YT_LEVEL_LABELS, YT_LEVEL_MAP, yt_summary_keyboard
 from services.llm import summarize_ollama
 from state import yt_transcripts
-
 
 router = Router(name="youtube_callbacks")
 
