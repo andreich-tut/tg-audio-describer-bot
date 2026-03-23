@@ -30,6 +30,8 @@ disable=
     missing-kwoa,
     # tools/ scripts importing from sibling scripts by path
     no-name-in-module,
+    # GPU/optional packages not installed in CI (faster-whisper, whisperx, torch)
+    import-error,
     # Unused in some locales/callbacks by design
     unused-argument,
     unused-variable,
