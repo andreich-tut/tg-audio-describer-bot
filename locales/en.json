@@ -1,0 +1,154 @@
+{
+  "commands": {
+    "start": {
+      "greeting": "👋 Hello! I'm a voice LLM bot.",
+      "voice_instruction": "🎤 Send a voice message — I'll transcribe and respond.",
+      "text_instruction": "⌨️ Or just type a text message.",
+      "youtube_instruction": "🎬 Send a YouTube link — get a transcript and summary.",
+      "youtube_speakers_note": "   Add the word \"speakers\" for speaker diarization.",
+      "commands_header": "Commands:",
+      "mode": "/mode — select mode (chat / transcription / Obsidian note)",
+      "stop": "/stop — stop current processing (or type \"stop\")",
+      "clear": "/clear — clear conversation history",
+      "model": "/model — current model",
+      "ping": "/ping — check LLM API",
+      "limits": "/limits — free API limits",
+      "savedoc": "/savedoc — save transcripts to Google Docs",
+      "lang": "/lang — change language"
+    },
+    "lang": {
+      "current_language": "Current language: {language}",
+      "select_language": "Select language:",
+      "language_changed": "✅ Language changed to {language}",
+      "unknown_language": "❌ Unknown language."
+    },
+    "mode": {
+      "current_mode": "Current mode: {mode}",
+      "select_mode": "Select mode:",
+      "unknown_mode": "Unknown mode."
+    },
+    "clear": {
+      "history_cleared": "🗑 Conversation history cleared."
+    },
+    "model": {
+      "llm_model": "🤖 Model: `{llm_model}`",
+      "whisper_model": "🎙 Whisper: `{whisper_model}`"
+    },
+    "savedoc": {
+      "not_configured": "❌ Google Docs not configured.\nAdd GDOCS_CREDENTIALS_FILE and GDOCS_DOCUMENT_ID to .env and restart the bot.",
+      "enabled": "📄 Google Docs saving enabled.\nTranscripts will be added to: {document_url}",
+      "disabled": "🔇 Google Docs saving disabled."
+    },
+    "stop": {
+      "stopped": "🛑 Stopped.",
+      "no_active_tasks": "No active tasks."
+    },
+    "ping": {
+      "success": "✅ LLM API is available.\nModel: {model}",
+      "error": "❌ LLM API unavailable: {error}"
+    },
+    "limits": {
+      "checking": "🔍 Checking limits...",
+      "error": "❌ Error: {error}",
+      "errors_header": "\n\n⚠️ Errors:\n"
+    }
+  },
+  "keyboards": {
+    "youtube": {
+      "brief": "Brief",
+      "detailed": "Detailed",
+      "keypoints": "Key Points"
+    },
+    "mode": {
+      "chat": "💬 Chat",
+      "transcribe": "🎙 Transcribe",
+      "note": "📓 Note"
+    },
+    "mode_descriptions": {
+      "chat": "💬 Mode: chat — transcription + LLM response.",
+      "transcribe": "🎙 Mode: transcription only (no LLM).",
+      "note": "📓 Mode: Obsidian note — voice → structured Markdown note."
+    },
+    "stop": "🛑 Stop"
+  },
+  "pipelines": {
+    "youtube": {
+      "downloading": "📥 Downloading audio from YouTube...",
+      "transcribing": "🎙 Transcribing: {title} ({duration} min)...",
+      "transcribing_with_speakers": "🎙 Transcribing with speakers: {title} ({duration} min)...",
+      "no_speech": "🤷 Could not recognize speech in video.",
+      "transcript_caption": "📄 Full transcript",
+      "generating_summary": "🤖 Generating summary...",
+      "summary_header": "📋 *Summary:*\n\n",
+      "summary_format_header": "📋 *Summary ({label}):*\n\n",
+      "select_format": "Select summary format:",
+      "summary_error": "❌ Error generating summary: {error}",
+      "validation_error": "❌ {error}",
+      "processing_error": "❌ Error: {error}",
+      "stopped": "🛑 Stopped.",
+      "speakers_need_token": "⚠️ HF_TOKEN required in .env for speaker diarization. Transcribing without speakers..."
+    },
+    "audio": {
+      "transcribing": "🎙 Transcribing voice...",
+      "no_speech": "🤷 Could not recognize speech. Try again.",
+      "formatting_note": "📓 Formatting note...",
+      "note_caption": "📓 {title}\n{tags}{vault_line}",
+      "vault_saved": "\n📁 Saved to vault",
+      "file_too_big": "❌ File too large. Telegram Bot API limits file uploads to 20 MB.",
+      "processing_error": "❌ Error: {error}",
+      "stopped": "🛑 Stopped.",
+      "thinking": "⏳ Thinking...",
+      "recognized_header": "📝 *Recognized:*\n",
+      "response_header": "\n\n🤖 *Response:*\n",
+      "empty_response": "⚠️ Empty response from model."
+    },
+    "text": {
+      "thinking": "⏳ Thinking...",
+      "error": "❌ Error: {error}",
+      "stopped": "🛑 Stopped."
+    }
+  },
+  "messages": {
+    "unsupported_file": "⚠️ Only audio/video files are supported.",
+    "no_active_tasks": "No active tasks.",
+    "unknown_command": "Ignoring unknown command from user: {command}"
+  },
+  "callbacks": {
+    "youtube": {
+      "expired": "⏰ Transcript expired. Send the link again.",
+      "generating": "🤖 Generating summary...",
+      "generate": "🤖 Generating summary...",
+      "error": "❌ Error generating summary: {error}"
+    },
+    "cancel": {
+      "stopped": "🛑 Stopped",
+      "already_done": "Task already completed"
+    }
+  },
+  "limits": {
+    "header": "📊 *API Limits*",
+    "llm_not_openrouter": "\n🤖 *LLM*: not OpenRouter (limits unavailable)",
+    "llm_openrouter": "\n🤖 *OpenRouter (LLM)*\nModel: `{model}`\nPlan: {tier}\nSpent: ${usage} / {limit}",
+    "rate_limit": "Rate limit: {requests} req/{interval}",
+    "groq_not_configured": "\n🎙 *Groq (STT)*: error fetching data",
+    "groq_active": " (active)",
+    "groq_not_active": " (not active)",
+    "groq_requests": "Requests: {remaining} / {limit} remaining{reset}",
+    "groq_tokens": "Tokens: {remaining} / {limit} remaining{reset}",
+    "reset_suffix": ", resets in {time}",
+    "free_tier": "Free",
+    "paid_tier": "Paid",
+    "unlimited": "unlimited"
+  },
+  "llm": {
+    "empty_response": "⚠️ Empty response from model.",
+    "rate_limit_warning": "Rate limited (attempt {attempt}/{max}), retrying in {delay}s...",
+    "default_note_title": "Voice note",
+    "text_truncated": "\n\n(text truncated)"
+  },
+  "youtube": {
+    "live_not_supported": "Live streams are not supported.",
+    "too_long": "Video too long ({duration} min). Maximum: {max_duration} min.",
+    "download_failed": "Failed to download audio."
+  }
+}

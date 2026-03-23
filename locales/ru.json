@@ -1,0 +1,154 @@
+{
+  "commands": {
+    "start": {
+      "greeting": "👋 Привет! Я голосовой LLM-бот.",
+      "voice_instruction": "🎤 Отправь голосовое сообщение — я распознаю и отвечу.",
+      "text_instruction": "⌨️ Или просто напиши текстом.",
+      "youtube_instruction": "🎬 Отправь ссылку на YouTube — получишь расшифровку и саммари.",
+      "youtube_speakers_note": "   Добавь слово «спикеры» для распознавания говорящих.",
+      "commands_header": "Команды:",
+      "mode": "/mode — выбрать режим (чат / расшифровка / Obsidian-заметка)",
+      "stop": "/stop — остановить текущую обработку (или напиши «стоп»)",
+      "clear": "/clear — очистить историю диалога",
+      "model": "/model — текущая модель",
+      "ping": "/ping — проверить LLM API",
+      "limits": "/limits — лимиты бесплатных API",
+      "savedoc": "/savedoc — сохранять расшифровки в Google Docs",
+      "lang": "/lang — изменить язык"
+    },
+    "lang": {
+      "current_language": "Текущий язык: {language}",
+      "select_language": "Выберите язык:",
+      "language_changed": "✅ Язык изменён на {language}",
+      "unknown_language": "❌ Неизвестный язык."
+    },
+    "mode": {
+      "current_mode": "Текущий режим: {mode}",
+      "select_mode": "Выберите режим:",
+      "unknown_mode": "Неизвестный режим."
+    },
+    "clear": {
+      "history_cleared": "🗑 История диалога очищена."
+    },
+    "model": {
+      "llm_model": "🤖 Модель: `{llm_model}`",
+      "whisper_model": "🎙 Whisper: `{whisper_model}`"
+    },
+    "savedoc": {
+      "not_configured": "❌ Google Docs не настроен.\nДобавь GDOCS_CREDENTIALS_FILE и GDOCS_DOCUMENT_ID в .env и перезапусти бота.",
+      "enabled": "📄 Сохранение в Google Docs включено.\nРасшифровки будут добавляться в документ: {document_url}",
+      "disabled": "🔇 Сохранение в Google Docs выключено."
+    },
+    "stop": {
+      "stopped": "🛑 Остановлено.",
+      "no_active_tasks": "Нет активных задач."
+    },
+    "ping": {
+      "success": "✅ LLM API доступна.\nМодель: {model}",
+      "error": "❌ LLM API недоступна: {error}"
+    },
+    "limits": {
+      "checking": "🔍 Проверяю лимиты...",
+      "error": "❌ Ошибка: {error}",
+      "errors_header": "\n\n⚠️ Ошибки:\n"
+    }
+  },
+  "keyboards": {
+    "youtube": {
+      "brief": "Кратко",
+      "detailed": "Подробно",
+      "keypoints": "Тезисы"
+    },
+    "mode": {
+      "chat": "💬 Чат",
+      "transcribe": "🎙 Расшифровка",
+      "note": "📓 Заметка"
+    },
+    "mode_descriptions": {
+      "chat": "💬 Режим: чат — расшифровка + ответ LLM.",
+      "transcribe": "🎙 Режим: только расшифровка голоса (без LLM).",
+      "note": "📓 Режим: Obsidian-заметка — голос → структурированная заметка в Markdown."
+    },
+    "stop": "🛑 Стоп"
+  },
+  "pipelines": {
+    "youtube": {
+      "downloading": "📥 Загружаю аудио с YouTube...",
+      "transcribing": "🎙 Расшифровываю: {title} ({duration} мин)...",
+      "transcribing_with_speakers": "🎙 Расшифровываю со спикерами: {title} ({duration} мин)...",
+      "no_speech": "🤷 Не удалось распознать речь в видео.",
+      "transcript_caption": "📄 Полная расшифровка",
+      "generating_summary": "🤖 Генерирую саммари...",
+      "summary_header": "📋 *Саммари:*\n\n",
+      "summary_format_header": "📋 *Саммари ({label}):*\n\n",
+      "select_format": "Выберите формат саммари:",
+      "summary_error": "❌ Ошибка при генерации саммари: {error}",
+      "validation_error": "❌ {error}",
+      "processing_error": "❌ Ошибка: {error}",
+      "stopped": "🛑 Остановлено.",
+      "speakers_need_token": "⚠️ Для распознавания спикеров нужен HF_TOKEN в .env. Расшифровываю без спикеров..."
+    },
+    "audio": {
+      "transcribing": "🎙 Распознаю голос...",
+      "no_speech": "🤷 Не удалось распознать речь. Попробуй ещё раз.",
+      "formatting_note": "📓 Оформляю заметку...",
+      "note_caption": "📓 {title}\n{tags}{vault_line}",
+      "vault_saved": "\n📁 Сохранено в vault",
+      "file_too_big": "❌ Файл слишком большой. Telegram Bot API ограничивает загрузку файлов до 20 МБ.",
+      "processing_error": "❌ Ошибка: {error}",
+      "stopped": "🛑 Остановлено.",
+      "thinking": "⏳ Думаю...",
+      "recognized_header": "📝 *Распознано:*\n",
+      "response_header": "\n\n🤖 *Ответ:*\n",
+      "empty_response": "⚠️ Пустой ответ от модели."
+    },
+    "text": {
+      "thinking": "⏳ Думаю...",
+      "error": "❌ Ошибка: {error}",
+      "stopped": "🛑 Остановлено."
+    }
+  },
+  "messages": {
+    "unsupported_file": "⚠️ Поддерживаются только аудио/видео файлы.",
+    "no_active_tasks": "Нет активных задач.",
+    "unknown_command": "Игнорирую неизвестную команду от пользователя: {command}"
+  },
+  "callbacks": {
+    "youtube": {
+      "expired": "⏰ Расшифровка устарела. Отправьте ссылку заново.",
+      "generating": "🤖 Генерирую саммари...",
+      "generate": "🤖 Генерирую саммари...",
+      "error": "❌ Ошибка при генерации саммари: {error}"
+    },
+    "cancel": {
+      "stopped": "🛑 Остановлено",
+      "already_done": "Задача уже завершена"
+    }
+  },
+  "limits": {
+    "header": "📊 *Лимиты API*",
+    "llm_not_openrouter": "\n🤖 *LLM*: не OpenRouter (лимиты недоступны)",
+    "llm_openrouter": "\n🤖 *OpenRouter (LLM)*\nМодель: `{model}`\nТариф: {tier}\nПотрачено: ${usage} / {limit}",
+    "rate_limit": "Rate limit: {requests} req/{interval}",
+    "groq_not_configured": "\n🎙 *Groq (STT)*: ошибка при получении данных",
+    "groq_active": " (активен)",
+    "groq_not_active": " (не активен)",
+    "groq_requests": "Запросы: {remaining} / {limit} осталось{reset}",
+    "groq_tokens": "Токены: {remaining} / {limit} осталось{reset}",
+    "reset_suffix": ", сброс через {time}",
+    "free_tier": "Free",
+    "paid_tier": "Paid",
+    "unlimited": "без лимита"
+  },
+  "llm": {
+    "empty_response": "⚠️ Пустой ответ от модели.",
+    "rate_limit_warning": "Rate limited (attempt {attempt}/{max}), retrying in {delay}s...",
+    "default_note_title": "Голосовая заметка",
+    "text_truncated": "\n\n(текст обрезан)"
+  },
+  "youtube": {
+    "live_not_supported": "Прямые трансляции не поддерживаются.",
+    "too_long": "Видео слишком длинное ({duration} мин). Максимум: {max_duration} мин.",
+    "download_failed": "Не удалось загрузить аудио."
+  }
+}
