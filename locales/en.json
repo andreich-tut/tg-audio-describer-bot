@@ -1,7 +1,7 @@
 {
   "commands": {
     "start": {
-      "greeting": "👋 Hello! I'm a voice LLM bot.",
+      "greeting": "👋 Hello! I'm a voice LLM bot (v{version}).",
       "voice_instruction": "🎤 Send a voice message — I'll transcribe and respond.",
       "text_instruction": "⌨️ Or just type a text message.",
       "youtube_instruction": "🎬 Send a YouTube link — get a transcript and summary.",

@@ -1,7 +1,7 @@
 {
   "commands": {
     "start": {
-      "greeting": "👋 Привет! Я голосовой LLM-бот.",
+      "greeting": "👋 Привет! Я голосовой LLM-бот (v{version}).",
       "voice_instruction": "🎤 Отправь голосовое сообщение — я распознаю и отвечу.",
       "text_instruction": "⌨️ Или просто напиши текстом.",
       "youtube_instruction": "🎬 Отправь ссылку на YouTube — получишь расшифровку и саммари.",

@@ -38,6 +38,7 @@ from state import (
     user_gdocs,
     user_modes,
 )
+from version import __version__
 
 router = Router(name="commands")
 
@@ -53,6 +54,7 @@ async def cmd_start(message: types.Message):
         t(
             "commands.start.greeting",
             locale,
+            version=__version__,
         )
         + "\n\n"
         + t("commands.start.voice_instruction", locale)
