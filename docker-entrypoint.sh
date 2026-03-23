@@ -5,6 +5,7 @@ WARP_TIMEOUT=30
 
 # Start D-Bus (required by warp-svc)
 mkdir -p /run/dbus
+rm -f /run/dbus/pid
 dbus-daemon --system --nofork &
 sleep 1
 
@@ -16,7 +17,7 @@ trap "kill $WARP_PID 2>/dev/null" EXIT
 # Wait for warp-svc to be ready
 echo "Waiting for warp-svc..."
 elapsed=0
-until warp-cli --accept-tos status 2>&1 | grep -q .; do
+until warp-cli --accept-tos status 2>&1 | grep -qv "daemon is not running"; do
   sleep 1
   elapsed=$((elapsed + 1))
   if [ "$elapsed" -ge "$WARP_TIMEOUT" ]; then
