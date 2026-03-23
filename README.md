@@ -47,6 +47,7 @@ python bot.py
 | `/ping`    | Check LLM API availability                             |
 | `/limits`  | Show free-tier API usage (OpenRouter, Groq)            |
 | `/savedoc` | Toggle saving transcripts to Google Docs               |
+| `/lang`    | Change bot language (en / ru)                          |
 
 ## Usage
 
@@ -75,10 +76,13 @@ LLM_BASE_URL=https://openrouter.ai/api/v1
 LLM_MODEL=qwen/qwen3-235b-a22b:free
 
 WHISPER_BACKEND=local         # "local" or "groq"
-WHISPER_MODEL=medium          # tiny / small / medium / large-v3
-WHISPER_DEVICE=cuda           # cuda or cpu
+WHISPER_MODEL=medium          # tiny / small / medium / large-v3 (local only)
+WHISPER_DEVICE=cuda           # cuda or cpu (local only)
+GROQ_API_KEY=                 # required when WHISPER_BACKEND=groq
+HF_TOKEN=                     # required for speaker diarization (YouTube + CLI)
 
 ALLOWED_USERS=                # comma-separated Telegram user IDs (empty = allow all)
+DEFAULT_LANGUAGE=ru           # default bot language: "ru" or "en"
 SYSTEM_PROMPT=                # optional: override the default system prompt
 WARP_DEBUG=0                  # set to 1 to enable Cloudflare WARP verbose logs
 ```
@@ -104,6 +108,8 @@ WARP_DEBUG=0                  # set to 1 to enable Cloudflare WARP verbose logs
 | `large-v3` | ~10 GB  | slow  | best         |
 
 For cloud STT without a GPU, set `WHISPER_BACKEND=groq` and add `GROQ_API_KEY=` to `.env`.
+
+For YouTube speaker diarization, add `HF_TOKEN=` (free [HuggingFace](https://huggingface.co/settings/tokens) token).
 
 ## Obsidian vault (optional)
 
@@ -165,13 +171,17 @@ Modular design using aiogram 3 Routers:
 bot.py                          # Entrypoint: bot init, router assembly
 core/
   helpers.py                    # Utility functions (audio suffix, markdown escape, etc.)
+  i18n.py                       # Translations loader, get_text(), per-user locale
   keyboards.py                  # Inline keyboard builders
   pipelines.py                  # Processing logic (YouTube, audio, text)
+locales/
+  en.json                       # English translations
+  ru.json                       # Russian translations
 handlers/
   commands.py                   # /start, /mode, /clear, /model, /savedoc, /stop, /ping, /limits
   messages.py                   # voice, audio, video, document, text handlers
   youtube_callbacks.py          # YouTube summary inline button callbacks
-services/                       # Business logic layer (STT, LLM, YouTube, GDocs, Obsidian)
+services/                       # Business logic layer: STT, LLM, YouTube, GDocs, Obsidian, limits
 state.py                        # In-memory state (history, modes, cache)
 config.py                       # Environment loading, constants, logging
 ```

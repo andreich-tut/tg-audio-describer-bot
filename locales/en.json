@@ -130,6 +130,7 @@
     "llm_not_openrouter": "\n🤖 *LLM*: not OpenRouter (limits unavailable)",
     "llm_openrouter": "\n🤖 *OpenRouter (LLM)*\nModel: `{model}`\nPlan: {tier}\nSpent: ${usage} / {limit}",
     "rate_limit": "Rate limit: {requests} req/{interval}",
+    "groq_header": "\n🎙 *Groq (STT)*",
     "groq_not_configured": "\n🎙 *Groq (STT)*: error fetching data",
     "groq_active": " (active)",
     "groq_not_active": " (not active)",

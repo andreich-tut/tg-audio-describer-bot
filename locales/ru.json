@@ -130,6 +130,7 @@
     "llm_not_openrouter": "\n🤖 *LLM*: не OpenRouter (лимиты недоступны)",
     "llm_openrouter": "\n🤖 *OpenRouter (LLM)*\nМодель: `{model}`\nТариф: {tier}\nПотрачено: ${usage} / {limit}",
     "rate_limit": "Rate limit: {requests} req/{interval}",
+    "groq_header": "\n🎙 *Groq (STT)*",
     "groq_not_configured": "\n🎙 *Groq (STT)*: ошибка при получении данных",
     "groq_active": " (активен)",
     "groq_not_active": " (не активен)",

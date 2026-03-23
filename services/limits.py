@@ -84,7 +84,7 @@ def format_limits_message(or_data: dict | None, groq_data: dict | None, locale: 
         rst_t = groq_data.get("reset_tokens", "")
 
         active = t("limits.groq_active", locale) if WHISPER_BACKEND == "groq" else t("limits.groq_not_active", locale)
-        parts.append(f"\n🎙 *Groq (STT)*{active}")
+        parts.append(t("limits.groq_header", locale) + active)
         if lim_r:
             reset_suffix = t("limits.reset_suffix", locale, time=rst_r) if rst_r else ""
             parts.append(t("limits.groq_requests", locale, remaining=rem_r, limit=lim_r, reset=reset_suffix))

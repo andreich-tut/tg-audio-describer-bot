@@ -17,7 +17,14 @@ from config import (
 )
 from core.helpers import get_locale_from_callback, get_locale_from_message
 from core.i18n import t
-from core.keyboards import LANGUAGE_CODES, MODE_DESCRIPTIONS, MODE_LABELS, language_keyboard, mode_keyboard
+from core.keyboards import (
+    LANGUAGE_CODES,
+    MODE_LABELS,
+    _get_mode_descriptions,
+    _get_mode_labels,
+    language_keyboard,
+    mode_keyboard,
+)
 from services.gdocs import gdocs_service
 from services.limits import check_groq, check_openrouter, format_limits_message
 from services.llm import ping_llm
@@ -101,9 +108,9 @@ async def handle_mode_callback(callback: CallbackQuery):
     current = get_mode(callback.from_user.id)
     user_modes[callback.from_user.id] = new_mode
     logger.info("Mode change: user_id=%d: %s -> %s", callback.from_user.id, current, new_mode)
-    await callback.answer(MODE_LABELS[new_mode])
+    await callback.answer(_get_mode_labels(locale)[new_mode])
     await callback.message.edit_text(
-        MODE_DESCRIPTIONS[new_mode],
+        _get_mode_descriptions(locale)[new_mode],
         reply_markup=mode_keyboard(new_mode, locale),
     )
 
