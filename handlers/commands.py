@@ -90,7 +90,7 @@ async def cmd_mode(message: types.Message):
     current = get_mode(message.from_user.id)
     logger.info("/mode user_id=%d, current=%s", message.from_user.id, current)
     await message.answer(
-        t("commands.mode.current_mode", locale, mode=MODE_LABELS.get(current, current))
+        t("commands.mode.current_mode", locale, mode=_get_mode_labels(locale).get(current, current))
         + "\n"
         + t("commands.mode.select_mode", locale),
         reply_markup=mode_keyboard(current, locale),
