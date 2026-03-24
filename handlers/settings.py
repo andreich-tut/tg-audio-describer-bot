@@ -105,19 +105,36 @@ def _llm_kb(locale: str) -> InlineKeyboardMarkup:
     )
 
 
-def _yadisk_kb(locale: str) -> InlineKeyboardMarkup:
-    """Yandex.Disk settings keyboard with OAuth login only (no direct credentials)."""
-    buttons = [
-        [
-            InlineKeyboardButton(text=t("settings.oauth_login_btn", locale), callback_data="settings:oauth:login"),
-        ],
-        [
-            InlineKeyboardButton(
-                text=t("settings.oauth_disconnect_btn", locale), callback_data="settings:oauth:disconnect"
-            ),
-        ],
-        [InlineKeyboardButton(text=t("settings.back_btn", locale), callback_data="settings:back")],
-    ]
+def _yadisk_kb(locale: str, user_id: int) -> InlineKeyboardMarkup:
+    """Yandex.Disk settings keyboard with OAuth login only (no direct credentials).
+
+    Shows Connect button if not connected, Disconnect button if connected.
+    """
+    from state import get_user_setting_json
+
+    oauth_token = get_user_setting_json(user_id, "yandex_oauth_token")
+    is_connected = oauth_token and oauth_token.get("access_token")
+
+    buttons = []
+
+    if is_connected:
+        # Show disconnect button only if connected
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=t("settings.oauth_disconnect_btn", locale), callback_data="settings:oauth:disconnect"
+                ),
+            ]
+        )
+    else:
+        # Show login button only if not connected
+        buttons.append(
+            [
+                InlineKeyboardButton(text=t("settings.oauth_login_btn", locale), callback_data="settings:oauth:login"),
+            ]
+        )
+
+    buttons.append([InlineKeyboardButton(text=t("settings.back_btn", locale), callback_data="settings:back")])
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -227,7 +244,14 @@ async def cb_submenu(callback: CallbackQuery):
     submenu = callback.data.split(":")[1]
     text_fn, kb_fn = _SUBMENU_FNS[submenu]
     await callback.answer()
-    await callback.message.edit_text(text_fn(callback.from_user.id, locale), reply_markup=kb_fn(locale))
+
+    # Pass user_id to keyboard builder for yadisk submenu
+    if submenu == "yadisk":
+        keyboard = kb_fn(locale, callback.from_user.id)
+    else:
+        keyboard = kb_fn(locale)
+
+    await callback.message.edit_text(text_fn(callback.from_user.id, locale), reply_markup=keyboard)
 
 
 @router.callback_query(F.data.startswith("settings:set:"))
@@ -330,10 +354,10 @@ async def cb_oauth_disconnect(callback: CallbackQuery):
 
     await callback.answer(t("settings.oauth.disconnected", locale), show_alert=False)
 
-    # Update the settings message
+    # Update the settings message (show login button now)
     await callback.message.edit_text(
         _yadisk_text(user_id, locale),
-        reply_markup=_yadisk_kb(locale),
+        reply_markup=_yadisk_kb(locale, user_id),
     )
 
 
