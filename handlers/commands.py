@@ -35,7 +35,6 @@ from state import (
     get_language,
     get_mode,
     set_language,
-    set_user_setting_json,
     user_gdocs,
     user_modes,
 )
@@ -108,9 +107,17 @@ async def cmd_start_oauth(message: types.Message, state):
     login = await get_user_login(token.access_token)
 
     if login:
-        token_dict = token.to_dict()
-        token_dict["login"] = login
-        set_user_setting_json(message.from_user.id, "yandex_oauth_token", token_dict)
+        # Store OAuth token using async database API
+        from state import set_oauth_token_async
+
+        await set_oauth_token_async(
+            message.from_user.id,
+            "yandex",
+            token.access_token,
+            token.refresh_token,
+            token.expires_at,
+            {"login": login},
+        )
         logger.info("OAuth login successful: user_id=%d, yandex_login=%s", message.from_user.id, login)
 
         # Clear FSM state and send success message with link to settings

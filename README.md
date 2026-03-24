@@ -94,7 +94,16 @@ ALLOWED_USERS=                # comma-separated Telegram user IDs (empty = allow
 DEFAULT_LANGUAGE=ru           # default bot language: "ru" or "en"
 SYSTEM_PROMPT=                # optional: override the default system prompt
 WARP_DEBUG=0                  # set to 1 to enable Cloudflare WARP verbose logs
+ENCRYPTION_KEY=               # recommended: master key for encrypted data (see PERSISTENCE.md)
 ```
+
+### Docker Data Persistence
+
+**IMPORTANT:** The `start.sh` script mounts `./data:/app/data` to persist the SQLite database and encryption key across container updates.
+
+Without this volume mount, all user data, OAuth tokens, and settings are lost when the container is rebuilt.
+
+See [PERSISTENCE.md](PERSISTENCE.md) for backup strategies and migration guides.
 
 ### LLM providers
 

@@ -4,6 +4,9 @@ set -e
 IMAGE=tg-voice
 CONTAINER=tg-voice
 
+# Create data directory if it doesn't exist (for SQLite persistence)
+mkdir -p ./data
+
 docker build -t "$IMAGE" .
 
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
@@ -17,6 +20,7 @@ docker run -d \
   --cap-add NET_ADMIN \
   --device /dev/net/tun \
   -v warp-data:/var/lib/cloudflare-warp \
+  -v ./data:/app/data \
   --restart unless-stopped \
   "$IMAGE"
 

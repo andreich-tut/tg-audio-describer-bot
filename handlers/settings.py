@@ -33,7 +33,7 @@ from state import (
 router = Router(name="settings")
 
 # Keys that contain secrets — user's message will be deleted after reading
-_SECRET_KEYS = {"llm_api_key", "yadisk_password"}
+_SECRET_KEYS = {"llm_api_key"}
 
 # Keys restricted to users in ALLOWED_USER_IDS (local path traversal risk)
 _PRIVILEGED_KEYS = {"obsidian_vault_path"}
@@ -41,7 +41,7 @@ _PRIVILEGED_KEYS = {"obsidian_vault_path"}
 # Submenu membership
 _SUBMENU_KEYS = {
     "llm": ["llm_api_key", "llm_base_url", "llm_model"],
-    "yadisk": ["yadisk_login", "yadisk_password", "yadisk_path"],
+    "yadisk": ["yadisk_path"],
     "obsidian": ["obsidian_vault_path", "obsidian_inbox_folder"],
 }
 
@@ -189,8 +189,6 @@ _KEY_META: dict[str, tuple[str, str]] = {
     "llm_api_key": ("settings.label_api_key", "llm"),
     "llm_base_url": ("settings.label_base_url", "llm"),
     "llm_model": ("settings.label_model", "llm"),
-    "yadisk_login": ("settings.label_login", "yadisk"),
-    "yadisk_password": ("settings.label_password", "yadisk"),
     "yadisk_path": ("settings.label_path", "yadisk"),
     "obsidian_vault_path": ("settings.label_vault_path", "obsidian"),
     "obsidian_inbox_folder": ("settings.label_inbox_folder", "obsidian"),
@@ -243,11 +241,6 @@ async def cb_set_value(callback: CallbackQuery, state: FSMContext):
     # Access control for privileged keys (local paths)
     if key in _PRIVILEGED_KEYS and ALLOWED_USER_IDS and callback.from_user.id not in ALLOWED_USER_IDS:
         await callback.answer(t("settings.access_denied", locale), show_alert=True)
-        return
-
-    # Block direct credential input for Yandex.Disk (OAuth only)
-    if key in ("yadisk_login", "yadisk_password"):
-        await callback.answer(t("settings.oauth_only", locale), show_alert=True)
         return
 
     label_key, submenu = _KEY_META[key]
@@ -329,10 +322,10 @@ async def cb_oauth_disconnect(callback: CallbackQuery):
     locale = get_locale_from_callback(callback)
     user_id = callback.from_user.id
 
-    # Remove stored OAuth token
-    from state import set_user_setting_json
+    # Remove stored OAuth token using async database API
+    from state import delete_oauth_token_async
 
-    set_user_setting_json(user_id, "yandex_oauth_token", None)
+    await delete_oauth_token_async(user_id, "yandex")
     logger.info("OAuth disconnected: user_id=%d", user_id)
 
     await callback.answer(t("settings.oauth.disconnected", locale), show_alert=False)
@@ -352,21 +345,6 @@ async def handle_setting_value(message: Message, bot: Bot, state: FSMContext):
     submenu = data.get("submenu", "llm")
     msg_id = data.get("msg_id")
     await state.clear()
-
-    # Block direct credential input for Yandex.Disk (OAuth only)
-    if key in ("yadisk_login", "yadisk_password"):
-        await message.answer(t("settings.oauth_only", locale))
-        # Return to Yandex.Disk settings menu
-        try:
-            await bot.edit_message_text(
-                _yadisk_text(message.from_user.id, locale),
-                chat_id=message.chat.id,
-                message_id=msg_id,
-                reply_markup=_yadisk_kb(locale),
-            )
-        except Exception:
-            pass
-        return
 
     value = (message.text or "").strip()
 

@@ -42,7 +42,10 @@ async def main():
     if not BOT_TOKEN:
         logger.error("BOT_TOKEN is not set! Add it to .env")
         return
-    state.load_user_settings()
+
+    # Initialize database and migrate legacy data
+    await state.initialize_state()
+
     logger.info(
         "Starting bot... Model: %s, Whisper: %s (%s), Allowed users: %s, GDocs: %s",
         LLM_MODEL,
@@ -101,7 +104,13 @@ async def main():
         await bot.set_my_commands(commands)
     except Exception as e:
         logger.warning("Failed to set bot commands: %s", e)
-    await dp.start_polling(bot)
+
+    try:
+        await dp.start_polling(bot)
+    finally:
+        # Cleanup: close database connections
+        await state.shutdown_state()
+        await bot.session.close()
 
 
 if __name__ == "__main__":

@@ -4,6 +4,9 @@ service-account-key.json
 *-credentials.json
 *-key.json
 
+# Data directory (SQLite database + encryption key)
+data/
+
 # Python
 __pycache__/
 *.py[cod]
