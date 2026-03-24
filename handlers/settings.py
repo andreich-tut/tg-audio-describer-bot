@@ -22,6 +22,7 @@ from config import (
 )
 from core.helpers import get_locale_from_callback, get_locale_from_message
 from core.i18n import t
+from services.yandex_oauth import get_oauth_url
 from state import (
     clear_user_settings_section,
     get_user_setting,
@@ -287,6 +288,43 @@ async def cb_reset_section(callback: CallbackQuery):
     await callback.answer(t("settings.settings_reset", locale, section=submenu))
     text_fn, kb_fn = _SUBMENU_FNS[submenu]
     await callback.message.edit_text(text_fn(callback.from_user.id, locale), reply_markup=kb_fn(locale))
+
+
+@router.callback_query(F.data == "settings:oauth:login")
+async def cb_oauth_login(callback: CallbackQuery, state: FSMContext):
+    """Initiate OAuth login flow."""
+    locale = get_locale_from_callback(callback)
+
+    if not YANDEX_OAUTH_CLIENT_ID:
+        await callback.answer(t("settings.oauth.not_configured", locale), show_alert=True)
+        return
+
+    # Generate state parameter for security
+    import uuid
+
+    state_value = uuid.uuid4().hex[:16]
+
+    # Store state in FSM to verify callback
+    await state.update_data(oauth_state=state_value)
+
+    # Get bot username for OAuth redirect
+    from aiogram.methods import GetMe
+
+    bot_info = await callback.bot(GetMe())
+    bot_username = bot_info.username
+
+    oauth_url = get_oauth_url(state_value, bot_username)
+
+    await callback.answer()
+    await callback.message.edit_text(
+        t("settings.oauth.login_instruction_auto", locale),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=t("settings.oauth.login_button", locale), url=oauth_url)],
+                [InlineKeyboardButton(text=t("settings.back_btn", locale), callback_data="settings:back")],
+            ]
+        ),
+    )
 
 
 @router.message(StateFilter(SettingsStates.waiting_for_value))
