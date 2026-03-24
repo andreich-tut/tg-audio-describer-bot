@@ -14,7 +14,8 @@
       "ping": "/ping — проверить LLM API",
       "limits": "/limits — лимиты бесплатных API",
       "savedoc": "/savedoc — сохранять расшифровки в Google Docs",
-      "lang": "/lang — изменить язык"
+      "lang": "/lang — изменить язык",
+      "settings": "/settings — личные настройки API и хранилища"
     },
     "lang": {
       "current_language": "Текущий язык: {language}",
@@ -153,5 +154,48 @@
     "live_not_supported": "Прямые трансляции не поддерживаются.",
     "too_long": "Видео слишком длинное ({duration} мин). Максимум: {max_duration} мин.",
     "download_failed": "Не удалось загрузить аудио."
+  },
+  "settings": {
+    "menu_title": "⚙️ Настройки\n\nНастройте личные ключи API и параметры хранилища. Ваши настройки перекрывают глобальные значения из .env.",
+    "llm_btn": "⚙️ LLM API",
+    "yadisk_btn": "☁️ Yandex.Disk",
+    "obsidian_btn": "📓 Obsidian",
+    "llm_title": "⚙️ LLM API",
+    "yadisk_title": "☁️ Yandex.Disk",
+    "obsidian_title": "📓 Obsidian (локальный)",
+    "set_api_key_btn": "✏️ API Key",
+    "set_base_url_btn": "✏️ Base URL",
+    "set_model_btn": "✏️ Model",
+    "set_login_btn": "✏️ Login",
+    "set_password_btn": "✏️ Password",
+    "set_path_btn": "✏️ Path",
+    "set_vault_path_btn": "✏️ Vault Path",
+    "set_inbox_folder_btn": "✏️ Inbox Folder",
+    "reset_btn": "🗑 Сбросить всё",
+    "clear_btn": "🗑 Очистить",
+    "back_btn": "← Назад",
+    "cancel_btn": "✕ Отмена",
+    "not_set": "не задан",
+    "global_default": "глобальный",
+    "send_value": "Отправьте значение для {name}:",
+    "value_saved": "✅ {name} сохранён.",
+    "settings_reset": "🗑 Настройки {section} сброшены.",
+    "access_denied": "❌ Недостаточно прав для изменения этого параметра.",
+    "invalid_url": "❌ Неверный URL. Должен начинаться с http:// или https://",
+    "value_empty": "❌ Значение не может быть пустым.",
+    "value_too_long": "❌ Значение слишком длинное (максимум {max} символов).",
+    "label_api_key": "API Key",
+    "label_base_url": "Base URL",
+    "label_model": "Model",
+    "label_login": "Login",
+    "label_password": "Password",
+    "label_path": "Path",
+    "label_vault_path": "Vault Path",
+    "label_inbox_folder": "Inbox Folder",
+    "free_tier": {
+      "limit_reached": "🚫 Вы использовали все {limit} бесплатных запроса.\n\nНастройте свой API ключ через /settings для продолжения.",
+      "last_use": "⚠️ Это ваш последний бесплатный запрос. Настройте свой API ключ через /settings.",
+      "uses_remaining": "ℹ️ Осталось бесплатных запросов: {remaining}/{limit}. Свой API ключ → /settings."
+    }
   }
 }

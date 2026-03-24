@@ -15,7 +15,7 @@ from aiogram import Bot, types
 from aiogram.enums import ParseMode
 from aiogram.types import BufferedInputFile
 
-from config import HF_TOKEN, logger
+from config import ALLOWED_USER_IDS, HF_TOKEN, logger
 from core.helpers import escape_md, get_locale_from_message
 from core.i18n import t
 from core.keyboards import stop_keyboard, yt_summary_keyboard
@@ -24,13 +24,43 @@ from services.llm import ask_ollama, format_note_ollama, summarize_ollama
 from services.obsidian import is_obsidian_enabled, save_note
 from services.stt import transcribe
 from services.youtube import download_yt_audio, transcribe_diarized
-from state import cleanup_yt_cache, get_mode, yt_transcripts
+from state import (
+    FREE_USES_LIMIT,
+    can_use_shared_credentials,
+    cleanup_yt_cache,
+    get_mode,
+    get_user_setting,
+    increment_free_uses,
+    yt_transcripts,
+)
+
+
+async def _check_free_tier(message: types.Message, locale: str) -> bool:
+    """Check free-tier limit and count usage. Returns False if blocked."""
+    user_id = message.from_user.id
+    if not can_use_shared_credentials(user_id):
+        await message.answer(t("settings.free_tier.limit_reached", locale, limit=FREE_USES_LIMIT))
+        return False
+    # Count usage only for users subject to the free tier
+    if ALLOWED_USER_IDS and user_id not in ALLOWED_USER_IDS and not get_user_setting(user_id, "llm_api_key"):
+        new_count = increment_free_uses(user_id)
+        remaining = FREE_USES_LIMIT - new_count
+        if remaining == 0:
+            await message.answer(t("settings.free_tier.last_use", locale))
+        elif remaining > 0:
+            await message.answer(
+                t("settings.free_tier.uses_remaining", locale, remaining=remaining, limit=FREE_USES_LIMIT)
+            )
+    return True
 
 
 async def process_youtube(message: types.Message, url: str, diarize: bool):
     """Download YouTube audio, transcribe, send transcript file, summarize with inline buttons."""
     locale = get_locale_from_message(message)
-    logger.info("YouTube: user_id=%d, url=%s, diarize=%s", message.from_user.id, url, diarize)
+    user_id = message.from_user.id
+    logger.info("YouTube: user_id=%d, url=%s, diarize=%s", user_id, url, diarize)
+    if not await _check_free_tier(message, locale):
+        return
     processing_msg = await message.answer(
         t("pipelines.youtube.downloading", locale), reply_markup=stop_keyboard(locale)
     )
@@ -80,7 +110,7 @@ async def process_youtube(message: types.Message, url: str, diarize: bool):
 
         # 6. Generate brief summary
         await processing_msg.edit_text(t("pipelines.youtube.generating_summary", locale))
-        summary = await summarize_ollama(transcript_text, "brief", title, locale)
+        summary = await summarize_ollama(transcript_text, "brief", title, locale, user_id=user_id)
 
         header = t("pipelines.youtube.summary_header", locale)
         full_msg = header + summary
@@ -126,13 +156,16 @@ async def process_youtube(message: types.Message, url: str, diarize: bool):
 async def process_audio(message: types.Message, bot: Bot, file_id: str, suffix: str):
     """Download audio file → transcribe → (LLM if chat mode) → reply."""
     locale = get_locale_from_message(message)
+    user_id = message.from_user.id
     logger.info(
         "Audio: user_id=%d, type=%s, mode=%s, file_id=%s",
-        message.from_user.id,
+        user_id,
         suffix,
-        get_mode(message.from_user.id),
+        get_mode(user_id),
         file_id[:20],
     )
+    if not await _check_free_tier(message, locale):
+        return
     processing_msg = await message.answer(t("pipelines.audio.transcribing", locale), reply_markup=stop_keyboard(locale))
 
     try:
@@ -153,18 +186,18 @@ async def process_audio(message: types.Message, bot: Bot, file_id: str, suffix: 
             return
 
         # 3. Save to Google Docs if enabled
-        if is_gdocs_enabled(message.from_user.id):
-            await save_to_gdocs(message.from_user.id, message.from_user.username, user_text)
+        if is_gdocs_enabled(user_id):
+            await save_to_gdocs(user_id, message.from_user.username, user_text)
 
         # 4. Transcribe-only mode — just return the text
-        if get_mode(message.from_user.id) == "transcribe":
+        if get_mode(user_id) == "transcribe":
             await processing_msg.edit_text(user_text, reply_markup=None)
             return
 
         # 5. Obsidian note mode — format transcription as a structured Markdown note
-        if get_mode(message.from_user.id) == "note":
+        if get_mode(user_id) == "note":
             await processing_msg.edit_text(t("pipelines.audio.formatting_note", locale))
-            title, tags, body = await format_note_ollama(user_text, locale)
+            title, tags, body = await format_note_ollama(user_text, locale, user_id=user_id)
 
             now = datetime.now()
             date_str = now.strftime("%Y-%m-%d")
@@ -178,9 +211,9 @@ async def process_audio(message: types.Message, bot: Bot, file_id: str, suffix: 
             filename = f"{date_str}-{safe_title.replace(' ', '-')}.md"
 
             vault_saved = False
-            if is_obsidian_enabled():
+            if is_obsidian_enabled(user_id):
                 try:
-                    await save_note(filename, note_md)
+                    await save_note(filename, note_md, user_id=user_id)
                     vault_saved = True
                 except Exception as e:
                     logger.error("Failed to save note to Obsidian vault: %s", e)
@@ -203,7 +236,7 @@ async def process_audio(message: types.Message, bot: Bot, file_id: str, suffix: 
             parse_mode=ParseMode.MARKDOWN,
         )
 
-        response = await ask_ollama(message.from_user.id, user_text, locale)
+        response = await ask_ollama(user_id, user_text, locale)
 
         full_text = (
             t("pipelines.audio.recognized_header", locale)
@@ -243,9 +276,12 @@ async def process_audio(message: types.Message, bot: Bot, file_id: str, suffix: 
 async def process_text(message: types.Message):
     """Send text message to LLM and reply."""
     locale = get_locale_from_message(message)
+    user_id = message.from_user.id
+    if not await _check_free_tier(message, locale):
+        return
     processing_msg = await message.answer(t("pipelines.text.thinking", locale), reply_markup=stop_keyboard(locale))
     try:
-        response = await ask_ollama(message.from_user.id, message.text, locale)
+        response = await ask_ollama(user_id, message.text, locale)
 
         if len(response) > 4000:
             await processing_msg.delete()

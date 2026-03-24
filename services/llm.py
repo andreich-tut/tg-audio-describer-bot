@@ -20,26 +20,59 @@ from config import (
     SYSTEM_PROMPT,
 )
 from core.i18n import t
-from state import add_to_history, get_history
+from state import add_to_history, get_history, get_user_setting
 
 logger = logging.getLogger(__name__)
 
-_client = openai.AsyncOpenAI(
+_DEFAULT_HEADERS = {
+    "HTTP-Referer": "https://github.com/tg-voice-bot",
+    "X-Title": "TG Voice Bot",
+}
+
+# Module-level default client (shared credentials)
+_default_client = openai.AsyncOpenAI(
     api_key=LLM_API_KEY,
     base_url=LLM_BASE_URL,
-    default_headers={
-        "HTTP-Referer": "https://github.com/tg-voice-bot",
-        "X-Title": "TG Voice Bot",
-    },
+    default_headers=_DEFAULT_HEADERS,
 )
 
+# Cache of per-credential clients
+_clients: dict[tuple[str, str], openai.AsyncOpenAI] = {}
 
-async def _chat_with_retry(**kwargs) -> openai.types.chat.ChatCompletion:
+
+def _get_client(user_id: int = 0) -> openai.AsyncOpenAI:
+    """Return a cached AsyncOpenAI client for the user's effective credentials."""
+    if not user_id:
+        return _default_client
+    api_key = get_user_setting(user_id, "llm_api_key")
+    base_url = get_user_setting(user_id, "llm_base_url")
+    if not api_key and not base_url:
+        return _default_client
+    api_key = api_key or LLM_API_KEY
+    base_url = base_url or LLM_BASE_URL
+    cache_key = (api_key, base_url)
+    if cache_key not in _clients:
+        _clients[cache_key] = openai.AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            default_headers=_DEFAULT_HEADERS,
+        )
+    return _clients[cache_key]
+
+
+def _get_model(user_id: int = 0) -> str:
+    """Return the effective LLM model for the user."""
+    if user_id:
+        return get_user_setting(user_id, "llm_model") or LLM_MODEL
+    return LLM_MODEL
+
+
+async def _chat_with_retry(client: openai.AsyncOpenAI, **kwargs) -> openai.types.chat.ChatCompletion:
     """Call chat.completions.create with exponential backoff on rate limit errors."""
     delays = [5, 15, 30]
     for attempt, delay in enumerate(delays + [None]):
         try:
-            return await _client.chat.completions.create(**kwargs)
+            return await client.chat.completions.create(**kwargs)
         except openai.RateLimitError:
             if delay is None:
                 raise
@@ -58,8 +91,11 @@ async def ask_ollama(user_id: int, user_message: str, locale: str = DEFAULT_LANG
     )
     t0 = time.time()
 
+    client = _get_client(user_id)
+    model = _get_model(user_id)
     msg = await _chat_with_retry(
-        model=LLM_MODEL,
+        client,
+        model=model,
         max_tokens=4096,
         messages=[{"role": "system", "content": SYSTEM_PROMPT}] + get_history(user_id),
     )
@@ -74,7 +110,9 @@ async def ask_ollama(user_id: int, user_message: str, locale: str = DEFAULT_LANG
     return assistant_text
 
 
-async def summarize_ollama(text: str, detail_level: str, title: str = "", locale: str = DEFAULT_LANGUAGE) -> str:
+async def summarize_ollama(
+    text: str, detail_level: str, title: str = "", locale: str = DEFAULT_LANGUAGE, user_id: int = 0
+) -> str:
     """One-shot summarization via LLM. No conversation history."""
     logger.info("Summarize request: detail=%s, title=%s, text_len=%d", detail_level, title[:60], len(text))
     t0 = time.time()
@@ -85,8 +123,11 @@ async def summarize_ollama(text: str, detail_level: str, title: str = "", locale
 
     user_content = f"Видео: {title}\n\nТекст:\n{text}" if title else text
 
+    client = _get_client(user_id)
+    model = _get_model(user_id)
     msg = await _chat_with_retry(
-        model=LLM_MODEL,
+        client,
+        model=model,
         max_tokens=4096,
         messages=[
             {"role": "system", "content": system_prompt},
@@ -100,7 +141,7 @@ async def summarize_ollama(text: str, detail_level: str, title: str = "", locale
     return result or t("llm.empty_response", locale)
 
 
-async def format_note_ollama(text: str, locale: str = DEFAULT_LANGUAGE) -> tuple[str, list[str], str]:
+async def format_note_ollama(text: str, locale: str = DEFAULT_LANGUAGE, user_id: int = 0) -> tuple[str, list[str], str]:
     """Format voice transcription as an Obsidian note via LLM.
 
     Returns (title, tags, body).
@@ -108,8 +149,11 @@ async def format_note_ollama(text: str, locale: str = DEFAULT_LANGUAGE) -> tuple
     logger.info("Note format request: text_len=%d", len(text))
     t0 = time.time()
 
+    client = _get_client(user_id)
+    model = _get_model(user_id)
     msg = await _chat_with_retry(
-        model=LLM_MODEL,
+        client,
+        model=model,
         max_tokens=4096,
         messages=[
             {"role": "system", "content": NOTE_PROMPT},
@@ -142,6 +186,7 @@ async def format_note_ollama(text: str, locale: str = DEFAULT_LANGUAGE) -> tuple
 async def ping_llm() -> str:
     """Test LLM API connectivity. Returns model name on success."""
     await _chat_with_retry(
+        _default_client,
         model=LLM_MODEL,
         max_tokens=5,
         messages=[{"role": "user", "content": "ping"}],

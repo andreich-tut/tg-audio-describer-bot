@@ -10,8 +10,10 @@ Also works with regular text messages.
 import asyncio
 
 from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
+import state
 from config import (
     ALLOWED_USER_IDS,
     BOT_TOKEN,
@@ -24,21 +26,23 @@ from config import (
 from core.i18n import t
 from handlers.commands import router as commands_router
 from handlers.messages import router as messages_router
+from handlers.settings import router as settings_router
 from handlers.youtube_callbacks import router as youtube_callbacks_router
 from services.gdocs import gdocs_service
 
 # Telegram Bot
 bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(storage=MemoryStorage())
 
-# Include routers in order: commands -> youtube_callbacks -> messages (catch-all last)
-dp.include_routers(commands_router, youtube_callbacks_router, messages_router)
+# Include routers: settings (FSM) first, then commands, youtube callbacks, messages (catch-all last)
+dp.include_routers(settings_router, commands_router, youtube_callbacks_router, messages_router)
 
 
 async def main():
     if not BOT_TOKEN:
         logger.error("BOT_TOKEN is not set! Add it to .env")
         return
+    state.load_user_settings()
     logger.info(
         "Starting bot... Model: %s, Whisper: %s (%s), Allowed users: %s, GDocs: %s",
         LLM_MODEL,
@@ -76,6 +80,10 @@ async def main():
         BotCommand(
             command="lang",
             description=t("commands.start.lang", locale).split(" — ")[0].replace("/", ""),
+        ),
+        BotCommand(
+            command="settings",
+            description=t("commands.start.settings", locale),
         ),
         BotCommand(
             command="start",

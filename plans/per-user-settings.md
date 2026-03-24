@@ -200,3 +200,75 @@ User pastes credentials/keys as text messages in the chat.
 
 The FSM plan above covers LLM API Key and Obsidian path well as-is.
 Yandex Disk ideally uses OAuth to avoid storing login/password.
+
+---
+
+## Free tier: usage limits for shared credentials
+
+Users who haven't configured their own credentials get a limited number of free
+uses of the bot's global (shared) API keys. After the limit is reached, the bot
+stops processing and asks the user to set up their own credentials via `/settings`.
+
+### Rules
+
+- **What counts as a use**: every LLM call AND every STT call (transcription).
+  Each pipeline invocation (`process_audio`, `process_text`, `process_youtube`)
+  that hits LLM or STT increments the counter.
+- **Limit**: `FREE_USES_LIMIT = 3` (configurable constant).
+- **Who is affected**: all users EXCEPT those listed in `ALLOWED_USERS` env var.
+  Allowed users have unlimited access to shared credentials.
+- **Persistence**: counters are saved to `data/user_settings.json` alongside
+  user settings, so they survive bot restarts.
+
+### Implementation outline
+
+#### `state.py`
+
+```python
+FREE_USES_LIMIT = 3
+
+# Persisted in data/user_settings.json alongside user_settings
+user_free_uses: dict[int, int] = {}
+
+def get_free_uses(user_id: int) -> int:
+    return user_free_uses.get(user_id, 0)
+
+def increment_free_uses(user_id: int) -> int:
+    """Increment and return the new count. Persists to disk."""
+    user_free_uses[user_id] = user_free_uses.get(user_id, 0) + 1
+    save_user_settings()
+    return user_free_uses[user_id]
+
+def has_free_uses_left(user_id: int) -> bool:
+    return get_free_uses(user_id) < FREE_USES_LIMIT
+```
+
+#### Check logic (in pipelines or a decorator)
+
+```python
+def can_use_shared_credentials(user_id: int) -> bool:
+    """Return True if the user may use the bot's global API keys."""
+    # Allowed users always can
+    if user_id in config.ALLOWED_USER_IDS:
+        return True
+    # User has own credentials — no limit
+    if get_user_setting(user_id, "llm_api_key"):
+        return True
+    # Free tier check
+    return has_free_uses_left(user_id)
+```
+
+Before calling LLM/STT:
+1. Call `can_use_shared_credentials(user_id)`.
+2. If **yes**: increment counter, proceed. Optionally warn:
+   - "You have N of 3 free uses remaining. Set your own API key via /settings."
+3. If **no**: block with message:
+   - "You've used all 3 free requests. Please set up your own API key via
+     /settings to continue using the bot."
+
+### UX
+
+- After each free use, show remaining count (e.g. "2/3 free uses remaining").
+- On the 3rd use, include a note: "This is your last free use."
+- After limit reached, every message gets a block response pointing to `/settings`.
+- Once the user sets their own API key, the limit no longer applies.

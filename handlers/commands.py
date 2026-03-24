@@ -80,6 +80,8 @@ async def cmd_start(message: types.Message):
         + t("commands.start.limits", locale)
         + "\n"
         + t("commands.start.lang", locale)
+        + "\n"
+        + t("commands.start.settings", locale)
         + gdocs_line,
     )
 

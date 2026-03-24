@@ -5,6 +5,7 @@ Message handlers: voice, audio, video_note, document, video, text, catch-all.
 from pathlib import Path
 
 from aiogram import Bot, F, Router, types
+from aiogram.filters import StateFilter
 
 from config import YT_URL_RE, is_allowed, logger
 from core.helpers import audio_suffix, get_audio_from_msg, get_locale_from_message, run_as_cancellable
@@ -70,7 +71,7 @@ async def handle_video(message: types.Message, bot: Bot):
     await run_as_cancellable(message.from_user.id, process_audio(message, bot, message.video.file_id, suffix))
 
 
-@router.message(F.text)
+@router.message(F.text, StateFilter(None))
 async def handle_text(message: types.Message, bot: Bot):
     """Process regular text messages through LLM."""
     locale = get_locale_from_message(message)
@@ -116,7 +117,7 @@ async def handle_text(message: types.Message, bot: Bot):
     await run_as_cancellable(message.from_user.id, process_text(message))
 
 
-@router.message()
+@router.message(StateFilter(None))
 async def handle_unhandled(message: types.Message):
     """Catch-all: log unhandled content types for debugging."""
     logger.warning(

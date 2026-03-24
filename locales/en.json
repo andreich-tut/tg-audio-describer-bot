@@ -14,7 +14,8 @@
       "ping": "/ping — check LLM API",
       "limits": "/limits — free API limits",
       "savedoc": "/savedoc — save transcripts to Google Docs",
-      "lang": "/lang — change language"
+      "lang": "/lang — change language",
+      "settings": "/settings — personal API and storage settings"
     },
     "lang": {
       "current_language": "Current language: {language}",
@@ -153,5 +154,48 @@
     "live_not_supported": "Live streams are not supported.",
     "too_long": "Video too long ({duration} min). Maximum: {max_duration} min.",
     "download_failed": "Failed to download audio."
+  },
+  "settings": {
+    "menu_title": "⚙️ Settings\n\nConfigure your personal API credentials and storage. Your settings override the global .env defaults.",
+    "llm_btn": "⚙️ LLM API",
+    "yadisk_btn": "☁️ Yandex.Disk",
+    "obsidian_btn": "📓 Obsidian",
+    "llm_title": "⚙️ LLM API",
+    "yadisk_title": "☁️ Yandex.Disk",
+    "obsidian_title": "📓 Obsidian (local)",
+    "set_api_key_btn": "✏️ API Key",
+    "set_base_url_btn": "✏️ Base URL",
+    "set_model_btn": "✏️ Model",
+    "set_login_btn": "✏️ Login",
+    "set_password_btn": "✏️ Password",
+    "set_path_btn": "✏️ Path",
+    "set_vault_path_btn": "✏️ Vault Path",
+    "set_inbox_folder_btn": "✏️ Inbox Folder",
+    "reset_btn": "🗑 Reset all",
+    "clear_btn": "🗑 Clear all",
+    "back_btn": "← Back",
+    "cancel_btn": "✕ Cancel",
+    "not_set": "not set",
+    "global_default": "global",
+    "send_value": "Send the value for {name}:",
+    "value_saved": "✅ {name} saved.",
+    "settings_reset": "🗑 {section} settings cleared.",
+    "access_denied": "❌ You don't have permission to change this setting.",
+    "invalid_url": "❌ Invalid URL. Must start with http:// or https://",
+    "value_empty": "❌ Value cannot be empty.",
+    "value_too_long": "❌ Value too long (max {max} characters).",
+    "label_api_key": "API Key",
+    "label_base_url": "Base URL",
+    "label_model": "Model",
+    "label_login": "Login",
+    "label_password": "Password",
+    "label_path": "Path",
+    "label_vault_path": "Vault Path",
+    "label_inbox_folder": "Inbox Folder",
+    "free_tier": {
+      "limit_reached": "🚫 You've used all {limit} free requests.\n\nSet up your own API key via /settings to continue.",
+      "last_use": "⚠️ This is your last free request. Set up your own API key via /settings.",
+      "uses_remaining": "ℹ️ {remaining}/{limit} free requests remaining. Own API key → /settings."
+    }
   }
 }
