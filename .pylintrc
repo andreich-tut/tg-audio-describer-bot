@@ -51,6 +51,8 @@ disable=
     # Unused in some locales/callbacks by design
     unused-argument,
     unused-variable,
+    # Re-export modules use __all__ to define public API (state.py, config.py, bot.py)
+    unused-import,
 
 [FORMAT]
 max-line-length=120
