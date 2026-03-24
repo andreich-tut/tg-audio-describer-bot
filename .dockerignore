@@ -29,7 +29,6 @@ update.sh
 .git/
 .vscode/
 .idea/
-.claude/
 logs/
 tests/
 test/
