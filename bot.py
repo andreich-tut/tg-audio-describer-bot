@@ -13,7 +13,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
-import state
+from application.state import initialize_state, shutdown_state
 from infrastructure.storage.gdocs import gdocs_service
 from interfaces.telegram.handlers.commands import router as commands_router
 from interfaces.telegram.handlers.messages import router as messages_router
@@ -44,7 +44,7 @@ async def main():
         return
 
     # Initialize database and migrate legacy data
-    await state.initialize_state()
+    await initialize_state()
 
     logger.info(
         "Starting bot... Model: %s, Whisper: %s (%s), Allowed users: %s, GDocs: %s",
@@ -109,7 +109,7 @@ async def main():
         await dp.start_polling(bot)
     finally:
         # Cleanup: close database connections
-        await state.shutdown_state()
+        await shutdown_state()
         await bot.session.close()
 
 

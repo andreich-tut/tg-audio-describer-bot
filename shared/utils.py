@@ -9,7 +9,7 @@ from aiogram import types
 from aiogram.types import CallbackQuery, Message
 
 from shared.i18n import get_user_locale
-from state import active_tasks
+from application.state import active_tasks
 
 
 def audio_suffix(mime: str, filename: str | None, fallback: str = ".audio") -> str:

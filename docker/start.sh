@@ -7,7 +7,7 @@ CONTAINER=tg-voice
 # Create data directory if it doesn't exist (for SQLite persistence)
 mkdir -p ./data
 
-docker build -t "$IMAGE" .
+docker build -t "$IMAGE" -f "$(dirname "$0")/Dockerfile" .
 
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
   docker stop "$CONTAINER"

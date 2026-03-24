@@ -31,14 +31,13 @@ from shared.config import (
 from shared.i18n import t
 from shared.keyboards import (
     LANGUAGE_CODES,
-    MODE_LABELS,
     _get_mode_descriptions,
-    _get_mode_labels,
+    get_mode_labels,
     language_keyboard,
     mode_keyboard,
 )
 from shared.utils import get_locale_from_callback, get_locale_from_message
-from version import __version__
+from shared.version import __version__
 
 router = Router(name="commands")
 
@@ -108,7 +107,7 @@ async def cmd_start_oauth(message: types.Message, state):
 
     if login:
         # Store OAuth token using async database API
-        from state import set_oauth_token_async
+        from application.state import set_oauth_token_async
 
         await set_oauth_token_async(
             message.from_user.id,
@@ -181,7 +180,7 @@ async def cmd_mode(message: types.Message):
     current = get_mode(message.from_user.id)
     logger.info("/mode user_id=%d, current=%s", message.from_user.id, current)
     await message.answer(
-        t("commands.mode.current_mode", locale, mode=_get_mode_labels(locale).get(current, current))
+        t("commands.mode.current_mode", locale, mode=get_mode_labels(locale).get(current, current))
         + "\n"
         + t("commands.mode.select_mode", locale),
         reply_markup=mode_keyboard(current, locale),
@@ -193,13 +192,14 @@ async def handle_mode_callback(callback: CallbackQuery):
     """Handle mode selection from inline keyboard."""
     locale = get_locale_from_callback(callback)
     new_mode = callback.data.split(":", 1)[1]
-    if new_mode not in MODE_LABELS:
+    mode_labels = get_mode_labels(locale)
+    if new_mode not in mode_labels:
         await callback.answer(t("commands.mode.unknown_mode", locale))
         return
     current = get_mode(callback.from_user.id)
     user_modes[callback.from_user.id] = new_mode
     logger.info("Mode change: user_id=%d: %s -> %s", callback.from_user.id, current, new_mode)
-    await callback.answer(_get_mode_labels(locale)[new_mode])
+    await callback.answer(mode_labels[new_mode])
     await callback.message.edit_text(
         _get_mode_descriptions(locale)[new_mode],
         reply_markup=mode_keyboard(new_mode, locale),

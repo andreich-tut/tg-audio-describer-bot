@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from config import DEFAULT_LANGUAGE, logger
+from shared.config import DEFAULT_LANGUAGE, logger
 
 # Cache for loaded translations
 _translations: dict[str, dict] = {}
@@ -119,7 +119,7 @@ def get_user_locale(user_id: int, telegram_language_code: str | None = None) -> 
         user_id: Telegram user ID
         telegram_language_code: User's language code from Telegram (e.g., 'en', 'ru', 'uk')
     """
-    from state import get_language
+    from application.state import get_language
 
     # Check if user has a saved preference
     saved_lang = get_language(user_id)
@@ -141,11 +141,3 @@ def t(key: str, locale: str = DEFAULT_LANGUAGE, **kwargs: Any) -> str:
     return get_text(locale, key, **kwargs)
 
 
-def t_ru(key: str, **kwargs: Any) -> str:
-    """Shorthand for Russian translation."""
-    return get_text("ru", key, **kwargs)
-
-
-def t_en(key: str, **kwargs: Any) -> str:
-    """Shorthand for English translation."""
-    return get_text("en", key, **kwargs)

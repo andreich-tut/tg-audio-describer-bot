@@ -42,7 +42,7 @@ def setup_logging() -> Path:
 
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from bot import transcribe
+from infrastructure.external_api.groq_client import transcribe
 
 
 async def run(files: list[str], output: str | None):

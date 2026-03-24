@@ -12,7 +12,7 @@ from application.state import yt_transcripts
 from infrastructure.external_api.llm_client import summarize_ollama
 from shared.config import logger
 from shared.i18n import t
-from shared.keyboards import YT_LEVEL_LABELS, YT_LEVEL_MAP, yt_summary_keyboard
+from shared.keyboards import YT_LEVEL_MAP, get_yt_level_labels, yt_summary_keyboard
 from shared.utils import get_locale_from_callback
 
 router = Router(name="youtube_callbacks")
@@ -46,7 +46,7 @@ async def handle_yt_summary_callback(callback: CallbackQuery):
             entry["transcript"], detail_level, entry["title"], locale, user_id=callback.from_user.id
         )
 
-        label = YT_LEVEL_LABELS.get(detail_level, "")
+        label = get_yt_level_labels(locale).get(detail_level, "")
         header = t("pipelines.youtube.summary_format_header", locale, label=label)
         full_msg = header + summary
 

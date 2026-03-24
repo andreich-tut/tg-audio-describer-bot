@@ -4,7 +4,7 @@ Keyboard builders and UI label constants.
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from config import DEFAULT_LANGUAGE
+from shared.config import DEFAULT_LANGUAGE
 from shared.i18n import t
 
 # YouTube summary levels
@@ -14,7 +14,7 @@ YT_LEVEL_MAP = {"b": "brief", "d": "detailed", "k": "keypoints"}
 LANGUAGE_CODES = {"ru": "🇷🇺 Русский", "en": "🇬🇧 English"}
 
 
-def _get_yt_level_labels(locale: str = DEFAULT_LANGUAGE) -> dict[str, str]:
+def get_yt_level_labels(locale: str = DEFAULT_LANGUAGE) -> dict[str, str]:
     """Get YouTube level labels for a locale."""
     return {
         "brief": t("keyboards.youtube.brief", locale),
@@ -23,7 +23,7 @@ def _get_yt_level_labels(locale: str = DEFAULT_LANGUAGE) -> dict[str, str]:
     }
 
 
-def _get_mode_labels(locale: str = DEFAULT_LANGUAGE) -> dict[str, str]:
+def get_mode_labels(locale: str = DEFAULT_LANGUAGE) -> dict[str, str]:
     """Get mode labels for a locale."""
     return {
         "chat": t("keyboards.mode.chat", locale),
@@ -41,15 +41,10 @@ def _get_mode_descriptions(locale: str = DEFAULT_LANGUAGE) -> dict[str, str]:
     }
 
 
-# Backward compatibility: load with default language
-YT_LEVEL_LABELS = _get_yt_level_labels()
-MODE_LABELS = _get_mode_labels()
-MODE_DESCRIPTIONS = _get_mode_descriptions()
-
 
 def yt_summary_keyboard(cache_key: str, locale: str = DEFAULT_LANGUAGE) -> InlineKeyboardMarkup:
     """Build inline keyboard with summary detail level buttons."""
-    labels = _get_yt_level_labels(locale)
+    labels = get_yt_level_labels(locale)
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -63,7 +58,7 @@ def yt_summary_keyboard(cache_key: str, locale: str = DEFAULT_LANGUAGE) -> Inlin
 
 def mode_keyboard(current: str, locale: str = DEFAULT_LANGUAGE) -> InlineKeyboardMarkup:
     """Inline keyboard for mode selection. Current mode button is marked."""
-    labels = _get_mode_labels(locale)
+    labels = get_mode_labels(locale)
     buttons = []
     for mode, label in labels.items():
         text = f"✅ {label}" if mode == current else label

@@ -110,7 +110,7 @@ def _yadisk_kb(locale: str, user_id: int) -> InlineKeyboardMarkup:
 
     Shows Connect button if not connected, Disconnect button if connected.
     """
-    from state import get_user_setting_json
+    from application.state import get_user_setting_json
 
     oauth_token = get_user_setting_json(user_id, "yandex_oauth_token")
     is_connected = oauth_token and oauth_token.get("access_token")
@@ -347,7 +347,7 @@ async def cb_oauth_disconnect(callback: CallbackQuery):
     user_id = callback.from_user.id
 
     # Remove stored OAuth token using async database API
-    from state import delete_oauth_token_async
+    from application.state import delete_oauth_token_async
 
     await delete_oauth_token_async(user_id, "yandex")
     logger.info("OAuth disconnected: user_id=%d", user_id)

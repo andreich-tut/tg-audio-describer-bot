@@ -24,12 +24,12 @@ User sends voice/audio → bot downloads file → Whisper transcribes (local or 
 ### Project Structure
 ```
 bot.py              — Entrypoint: creates Bot/Dispatcher, registers routers, starts polling
-version.py          — Reads __version__ from pyproject.toml
 shared/
   config.py         — Env loading, constants, logging (rotating file + console), access control
   i18n.py           — Internationalization: t(), get_user_locale(), detect_language_from_telegram()
   keyboards.py      — Inline keyboard builders (mode, language, YouTube summary, stop)
   utils.py          — Utilities: audio_suffix, escape_md, run_as_cancellable, get_audio_from_msg
+  version.py        — Reads __version__ from pyproject.toml
 application/
   state.py          — Database-backed state: SQLite with encryption, full async API
   pipelines.py      — Main processing: process_audio(), process_youtube(), process_text()
@@ -73,7 +73,12 @@ tools/
   diarize_all.py    — Batch diarize test/chunks/ → test/source.txt
   send_chunks.py    — Split audio + send chunks to bot via Telegram API
   split.sh          — Shell helper for audio splitting
-plans/              — Design docs (not part of runtime)
+docker/
+  Dockerfile        — Docker image definition
+  docker-entrypoint.sh — Container startup: Cloudflare WARP init → python bot.py
+  start.sh          — Build image + run container
+  update.sh         — Rebuild + prune old images
+docs/               — Design docs and migration notes (not part of runtime)
 ```
 
 ## Configuration
@@ -148,8 +153,8 @@ python bot.py
 
 ### Run with Docker
 ```bash
-./start.sh    # Builds Docker image + runs with Cloudflare WARP
-./update.sh   # Rebuilds + prunes old images
+./docker/start.sh    # Builds Docker image + runs with Cloudflare WARP
+./docker/update.sh   # Rebuilds + prunes old images
 ```
 
 **Data persistence:** `./data` directory is automatically created and mounted as volume.

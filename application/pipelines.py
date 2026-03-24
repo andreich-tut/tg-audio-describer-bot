@@ -24,8 +24,8 @@ from application.state import (
     increment_free_uses,
     yt_transcripts,
 )
-from config import ALLOWED_USER_IDS, HF_TOKEN, logger
-from domain.services.youtube import download_yt_audio, transcribe_diarized
+from shared.config import ALLOWED_USER_IDS, HF_TOKEN, logger
+from infrastructure.external_api.youtube import download_yt_audio, transcribe_diarized
 from infrastructure.external_api.groq_client import transcribe
 from infrastructure.external_api.llm_client import ask_ollama, format_note_ollama, summarize_ollama
 from infrastructure.storage.gdocs import is_gdocs_enabled, save_to_gdocs

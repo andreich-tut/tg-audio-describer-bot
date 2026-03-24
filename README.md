@@ -191,21 +191,14 @@ Modular design using aiogram 3 Routers:
 
 ```
 bot.py                          # Entrypoint: bot init, router assembly
-core/
-  helpers.py                    # Utility functions (audio suffix, markdown escape, etc.)
-  i18n.py                       # Translations loader, get_text(), per-user locale
-  keyboards.py                  # Inline keyboard builders
-  pipelines.py                  # Processing logic (YouTube, audio, text)
+shared/                         # Cross-cutting: config, i18n, keyboards, utils
+application/                    # State management, processing pipelines, rate limiting
+infrastructure/                 # DB, external APIs (LLM, Groq, YouTube, Yandex), storage
+interfaces/telegram/handlers/   # aiogram Routers: commands, messages, youtube callbacks, settings
 locales/
   en.json                       # English translations
   ru.json                       # Russian translations
-handlers/
-  commands.py                   # /start, /mode, /clear, /model, /savedoc, /stop, /ping, /limits
-  messages.py                   # voice, audio, video, document, text handlers
-  youtube_callbacks.py          # YouTube summary inline button callbacks
-services/                       # Business logic layer: STT, LLM, YouTube, GDocs, Obsidian, limits
-state.py                        # In-memory state (history, modes, cache)
-config.py                       # Environment loading, constants, logging
+prompts/                        # System prompt and summary prompt templates (.md files)
 ```
 
 ---

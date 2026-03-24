@@ -37,17 +37,17 @@ def _read_prompt(path: str) -> str:
     return p.read_text(encoding="utf-8").strip()
 
 
-SYSTEM_PROMPT = _read_prompt(os.getenv("SYSTEM_PROMPT", "domain/prompts/system.md"))
+SYSTEM_PROMPT = _read_prompt(os.getenv("SYSTEM_PROMPT", "prompts/system.md"))
 
 SUMMARY_PROMPTS = {
-    "brief": _read_prompt("domain/prompts/summary_brief.md"),
-    "detailed": _read_prompt("domain/prompts/summary_detailed.md"),
-    "keypoints": _read_prompt("domain/prompts/summary_keypoints.md"),
+    "brief": _read_prompt("prompts/summary_brief.md"),
+    "detailed": _read_prompt("prompts/summary_detailed.md"),
+    "keypoints": _read_prompt("prompts/summary_keypoints.md"),
 }
 
 MAX_SUMMARY_TEXT = 40000  # truncate transcript for summarization
 
-NOTE_PROMPT = _read_prompt("domain/prompts/note.md")
+NOTE_PROMPT = _read_prompt("prompts/note.md")
 
 # ──────────────────────────────────────────────
 # Whisper (STT)

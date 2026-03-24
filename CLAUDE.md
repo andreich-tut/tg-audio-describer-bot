@@ -24,35 +24,39 @@ User sends voice/audio → bot downloads file → Whisper transcribes (local GPU
 ### Project Structure
 ```
 bot.py              — Entrypoint: creates Bot/Dispatcher, registers routers, starts polling
-config.py           — Env loading, constants, logging (rotating file + console), access control
-state.py            — Database-backed state: SQLite with encryption, backward-compatible API
-version.py          — Reads __version__ from pyproject.toml
-db/
-  __init__.py       — Package exports
-  models.py         — SQLAlchemy ORM models (users, settings, oauth_tokens, conversations, free_uses)
-  database.py       — Async database service with CRUD operations
-  encryption.py     — Fernet encryption for sensitive data (OAuth tokens, API keys)
+shared/
+  config.py         — Env loading, constants, logging (rotating file + console), access control
+  i18n.py           — Internationalization: t(), get_user_locale(), detect_language_from_telegram()
+  keyboards.py      — Inline keyboard builders (mode, language, YouTube summary, stop)
+  utils.py          — Utilities: audio_suffix, escape_md, run_as_cancellable, get_audio_from_msg
+  version.py        — Reads __version__ from pyproject.toml
+application/
+  state.py          — Database-backed state: SQLite with encryption, full async API
+  pipelines.py      — Main processing: process_audio(), process_youtube(), process_text()
+  services/
+    rate_limiter.py — Rate limit checking: OpenRouter key info + cached Groq headers
+infrastructure/
+  database/
+    models.py       — SQLAlchemy ORM models (users, settings, oauth_tokens, conversations, free_uses)
+    database.py     — Async database service with CRUD operations
+    encryption.py   — Fernet encryption for sensitive data (OAuth tokens, API keys)
+  external_api/
+    groq_client.py  — Groq cloud STT (Whisper via API)
+    llm_client.py   — LLM chat (OpenAI SDK): ask_ollama(), summarize_ollama(), format_note_ollama()
+    youtube.py      — YouTube audio download (yt-dlp), optional whisperX diarization
+    yandex_client.py — Yandex OAuth 2.0 flow for Yandex.Disk access
+  storage/
+    obsidian.py     — Obsidian note saving: local vault or Yandex.Disk WebDAV (OAuth)
+    gdocs.py        — Google Docs integration (optional)
+interfaces/telegram/
+  handlers/
+    commands.py     — All /command handlers + inline callback query handlers (mode, lang, cancel, OAuth)
+    messages.py     — Message type handlers: voice, audio, video_note, document, video, text
+    youtube_callbacks.py — YouTube summary detail-level inline button handlers
+    settings.py     — /settings command, per-user API credentials, OAuth login
 alembic/
   env.py            — Alembic migration environment
   versions/         — Migration scripts
-core/
-  helpers.py        — Utilities: audio_suffix, escape_md, run_as_cancellable, get_audio_from_msg
-  i18n.py           — Internationalization: t(), get_user_locale(), detect_language_from_telegram()
-  keyboards.py      — Inline keyboard builders (mode, language, YouTube summary, stop)
-  pipelines.py      — Main processing: process_audio(), process_youtube(), process_text()
-handlers/
-  commands.py       — All /command handlers + inline callback query handlers (mode, lang, cancel, OAuth)
-  messages.py       — Message type handlers: voice, audio, video_note, document, video, text
-  youtube_callbacks.py — YouTube summary detail-level inline button handlers
-  settings.py       — /settings command, per-user API credentials, OAuth login
-services/
-  stt.py            — Whisper transcription: local (faster-whisper) or cloud (Groq API)
-  llm.py            — LLM chat (OpenAI SDK): ask_ollama(), summarize_ollama(), format_note_ollama()
-  limits.py         — Rate limit checking: OpenRouter key info + cached Groq headers
-  obsidian.py       — Obsidian note saving: local vault or Yandex.Disk WebDAV (OAuth)
-  youtube.py        — YouTube audio download (yt-dlp), optional whisperX diarization
-  gdocs.py          — Google Docs integration (optional)
-  yandex_oauth.py   — Yandex OAuth 2.0 flow for Yandex.Disk access
 prompts/
   system.md         — Main chat system prompt
   summary_brief.md  — Brief YouTube summary prompt
@@ -65,11 +69,16 @@ locales/
 tools/
   audio_splitter.py — FFmpeg-based audio chunking (by size or time)
   transcribe_diarize.py — whisperX + pyannote diarization CLI
-  transcribe_cli.py — CLI transcription wrapper (uses bot's Whisper)
+  transcribe_cli.py — CLI transcription wrapper (uses Groq STT)
   diarize_all.py    — Batch diarize test/chunks/ → test/source.txt
   send_chunks.py    — Split audio + send chunks to bot via Telegram API
   split.sh          — Shell helper for audio splitting
-plans/              — Design docs (not part of runtime)
+docker/
+  Dockerfile        — Docker image definition
+  docker-entrypoint.sh — Container startup: Cloudflare WARP init → python bot.py
+  start.sh          — Build image + run container
+  update.sh         — Rebuild + prune old images
+docs/               — Design docs and migration notes (not part of runtime)
 ```
 
 ## Configuration
@@ -115,7 +124,7 @@ YT_COOKIES_FILE=
 DEFAULT_LANGUAGE=ru
 
 # Database Encryption (REQUIRED for production)
-ENCRYPTION_KEY=                   # Generate: python -c "from db.encryption import generate_key; print(generate_key())"
+ENCRYPTION_KEY=                   # Generate: python -c "from infrastructure.database.encryption import generate_key; print(generate_key())"
                                   # If not set, auto-generated and stored in data/master.key
 ```
 
@@ -144,8 +153,8 @@ python bot.py
 
 ### Run with Docker
 ```bash
-./start.sh    # Builds Docker image + runs with Cloudflare WARP
-./update.sh   # Rebuilds + prunes old images
+./docker/start.sh    # Builds Docker image + runs with Cloudflare WARP
+./docker/update.sh   # Rebuilds + prunes old images
 ```
 
 **Data persistence:** `./data` directory is automatically created and mounted as volume.
@@ -215,11 +224,11 @@ Default set via `DEFAULT_LANGUAGE=ru` in `.env`. Users can switch per-session wi
 - **Conversation history**: Trimmed to last MAX_HISTORY (20) pairs to avoid context overflow
 - **Message splitting**: Responses >4000 chars split into multiple Telegram messages
 - **Async**: Uses asyncio + aiogram for non-blocking I/O
-- **Cancellation**: Active tasks stored in `state.active_tasks`, cancellable via `/stop`
+- **Cancellation**: Active tasks stored in `application.state.active_tasks`, cancellable via `/stop`
 - **Rate limiting**: LLM calls retry with exponential backoff (5s/15s/30s) on RateLimitError
 - **Error handling**: Exceptions logged and user notified in chat
 - **Persistence**: SQLite database with encryption (data persists across restarts)
-- **i18n**: All UI strings in `locales/{ru,en}.json`, accessed via `core.i18n.t(key, locale)`
+- **i18n**: All UI strings in `locales/{ru,en}.json`, accessed via `shared.i18n.t(key, locale)`
 
 ## Dependencies
 - `aiogram>=3.10` — Telegram bot framework (async)
