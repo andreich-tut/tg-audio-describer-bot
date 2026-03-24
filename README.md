@@ -23,6 +23,8 @@ cp .env.example .env
 
 Logs: `docker logs -f tg-voice`
 
+**Data persistence:** The `./data` directory is automatically created and mounted to persist the SQLite database and encryption key across container updates.
+
 ### Python
 
 ```bash
@@ -34,6 +36,8 @@ cp .env.example .env
 # Fill in BOT_TOKEN and LLM_API_KEY
 python bot.py
 ```
+
+**Data persistence:** Data stored in `data/bot.db` (SQLite) with encryption key in `data/master.key`.
 
 ## Development
 

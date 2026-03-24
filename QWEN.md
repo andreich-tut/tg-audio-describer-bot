@@ -7,8 +7,9 @@ This file provides guidance to Qwen Code when working with code in this reposito
 **Telegram Voice/Audio Bot**: A Telegram bot that processes voice messages, audio files, and YouTube links via Whisper STT and generates responses using any OpenAI-compatible LLM API (default: OpenRouter).
 
 - **Stack**: Python 3.11+, aiogram 3, faster-whisper (local) or Groq (cloud) for STT, OpenAI SDK for LLM
-- **Architecture**: Async event-driven (asyncio), in-memory conversation state, Docker deployment with Cloudflare WARP
+- **Architecture**: Async event-driven (asyncio), SQLite database with encryption for persistence, Docker deployment with Cloudflare WARP
 - **Language**: Bilingual UI (Russian/English), per-user language setting
+- **Persistence**: SQLite database (`data/bot.db`) with Fernet-encrypted sensitive data (OAuth tokens, API keys)
 
 ## Architecture & Key Concepts
 
@@ -24,24 +25,34 @@ User sends voice/audio → bot downloads file → Whisper transcribes (local or 
 ```
 bot.py              — Entrypoint: creates Bot/Dispatcher, registers routers, starts polling
 config.py           — Env loading, constants, logging (rotating file + console), access control
-state.py            — In-memory state: conversations, user modes/languages, active tasks, caches
+state.py            — Database-backed state: SQLite with encryption, backward-compatible API
 version.py          — Reads __version__ from pyproject.toml
+db/
+  __init__.py       — Package exports
+  models.py         — SQLAlchemy ORM models (users, settings, oauth_tokens, conversations, free_uses)
+  database.py       — Async database service with CRUD operations
+  encryption.py     — Fernet encryption for sensitive data (OAuth tokens, API keys)
+alembic/
+  env.py            — Alembic migration environment
+  versions/         — Migration scripts
 core/
   helpers.py        — Utilities: audio_suffix, escape_md, run_as_cancellable, get_audio_from_msg
   i18n.py           — Internationalization: t(), get_user_locale(), detect_language_from_telegram()
   keyboards.py      — Inline keyboard builders (mode, language, YouTube summary, stop)
   pipelines.py      — Main processing: process_audio(), process_youtube(), process_text()
 handlers/
-  commands.py       — All /command handlers + inline callback query handlers (mode, lang, cancel)
+  commands.py       — All /command handlers + inline callback query handlers (mode, lang, cancel, OAuth)
   messages.py       — Message type handlers: voice, audio, video_note, document, video, text
   youtube_callbacks.py — YouTube summary detail-level inline button handlers
+  settings.py       — /settings command, per-user API credentials, OAuth login
 services/
   stt.py            — Whisper transcription: local (faster-whisper) or cloud (Groq API)
   llm.py            — LLM chat (OpenAI SDK): ask_ollama(), summarize_ollama(), format_note_ollama()
   limits.py         — Rate limit checking: OpenRouter key info + cached Groq headers
-  obsidian.py       — Obsidian note saving: local vault or Yandex.Disk WebDAV
+  obsidian.py       — Obsidian note saving: local vault or Yandex.Disk WebDAV (OAuth)
   youtube.py        — YouTube audio download (yt-dlp), optional whisperX diarization
   gdocs.py          — Google Docs integration (optional)
+  yandex_oauth.py   — Yandex OAuth 2.0 flow for Yandex.Disk access
 prompts/
   system.md         — Main chat system prompt
   summary_brief.md  — Brief YouTube summary prompt
@@ -61,22 +72,8 @@ tools/
 plans/              — Design docs (not part of runtime)
 ```
 
-### Key Functions
-- `core.pipelines.process_audio(message)` → orchestrates STT + mode-based processing
-- `core.pipelines.process_youtube(message, url)` → downloads YouTube audio, offers summary options
-- `core.pipelines.process_text(message)` → sends text to LLM with history
-- `services.stt.transcribe(file_path)` → splits audio into chunks, runs Whisper (local or Groq)
-- `services.llm.ask_ollama(user_id, message, locale)` → sends to LLM with conversation history
-- `services.llm.summarize_ollama(text, detail_level, title, locale)` → one-shot summarization
-- `services.llm.format_note_ollama(text, locale)` → formats transcript as Obsidian note (title, tags, body)
-- `services.llm.ping_llm()` → tests LLM API connectivity
-- `services.limits.check_openrouter()` / `check_groq()` → rate limit info
-- `services.obsidian.save_note(filename, content)` → writes to local vault or WebDAV
-- `state.get_history(user_id)` / `state.add_to_history(...)` → per-user message history
-- `config.is_allowed(user_id)` → access control check
-- `core.i18n.t(key, locale)` → localized string lookup
+## Configuration
 
-### Configuration
 All config via `.env` file (template in `.env.example`):
 ```
 BOT_TOKEN=<Telegram bot token>
@@ -103,9 +100,12 @@ GDOCS_DOCUMENT_ID=
 # Obsidian (optional)
 OBSIDIAN_VAULT_PATH=
 OBSIDIAN_INBOX_FOLDER=Inbox
-YANDEX_DISK_LOGIN=                # WebDAV — overrides local vault if set
-YANDEX_DISK_PASSWORD=
 YANDEX_DISK_PATH=ObsidianVault
+
+# Yandex OAuth (REQUIRED for Yandex.Disk access)
+YANDEX_OAUTH_CLIENT_ID=           # Create at https://oauth.yandex.ru/client/new
+YANDEX_OAUTH_CLIENT_SECRET=       # Required scopes: login:info, cloud_api:disk.app_folder
+                                  # Redirect URI: https://t.me/<your_bot_username>
 
 # YouTube
 YT_MAX_DURATION=7200
@@ -113,6 +113,10 @@ YT_COOKIES_FILE=
 
 # Internationalization
 DEFAULT_LANGUAGE=ru
+
+# Database Encryption (REQUIRED for production)
+ENCRYPTION_KEY=                   # Generate: python -c "from db.encryption import generate_key; print(generate_key())"
+                                  # If not set, auto-generated and stored in data/master.key
 ```
 
 ## Development & Running
@@ -124,13 +128,14 @@ source venv/bin/activate
 pip install -r requirements.txt          # Cloud-only (Groq STT + OpenRouter LLM)
 pip install -r requirements-local.txt    # Adds faster-whisper for local STT
 cp .env.example .env
-# Edit .env: add BOT_TOKEN, LLM_API_KEY, etc.
+# Edit .env: add BOT_TOKEN, LLM_API_KEY, ENCRYPTION_KEY, etc.
 ```
 
 ### Prerequisites
 - **LLM API**: Any OpenAI-compatible endpoint (OpenRouter, local vLLM, etc.) with API key
 - **STT**: Either Groq API key (`WHISPER_BACKEND=groq`) or local faster-whisper with CUDA GPU (`WHISPER_BACKEND=local`)
 - **Telegram Bot Token**: From @BotFather
+- **Yandex OAuth** (for Yandex.Disk): Client ID + Secret from oauth.yandex.ru
 
 ### Run Locally
 ```bash
@@ -142,6 +147,8 @@ python bot.py
 ./start.sh    # Builds Docker image + runs with Cloudflare WARP
 ./update.sh   # Rebuilds + prunes old images
 ```
+
+**Data persistence:** `./data` directory is automatically created and mounted as volume.
 
 ### CI/CD
 - `.github/workflows/pylint.yml` — Runs pylint on every push
@@ -156,7 +163,7 @@ python bot.py
 - Logs: rotating files in `logs/` directory + console output (level=INFO)
 - `/ping` command tests LLM API connectivity
 - `/limits` shows OpenRouter + Groq rate limit usage
-- Conversation history is in-memory, cleared on restart
+- Conversation history: persisted in SQLite database
 
 ## Bot Commands
 | Command | Handler | Notes |
@@ -170,6 +177,7 @@ python bot.py
 | `/limits` | `cmd_limits()` | Shows OpenRouter + Groq free-tier usage |
 | `/lang` | `cmd_lang()` | Inline keyboard to switch UI language (ru/en) |
 | `/savedoc` | `cmd_savedoc()` | Toggle Google Docs saving (opt-in) |
+| `/settings` | `cmd_settings()` | Personal API credentials and storage settings |
 
 Voice, audio, and text message handlers check `is_allowed()` before processing.
 
@@ -194,6 +202,14 @@ Edit `.env`: `ALLOWED_USERS=123456789,987654321` (comma-separated Telegram user 
 ### Change UI Language
 Default set via `DEFAULT_LANGUAGE=ru` in `.env`. Users can switch per-session with `/lang`.
 
+### Yandex.Disk OAuth Setup
+1. Go to https://oauth.yandex.ru/client/new
+2. Create new OAuth application
+3. Set scopes: `login:info`, `cloud_api:disk.app_folder`
+4. Platform: Web services
+5. Redirect URI: `https://t.me/<your_bot_username>`
+6. Copy Client ID and Secret to `.env`
+
 ## Code Notes
 
 - **Conversation history**: Trimmed to last MAX_HISTORY (20) pairs to avoid context overflow
@@ -202,7 +218,7 @@ Default set via `DEFAULT_LANGUAGE=ru` in `.env`. Users can switch per-session wi
 - **Cancellation**: Active tasks stored in `state.active_tasks`, cancellable via `/stop`
 - **Rate limiting**: LLM calls retry with exponential backoff (5s/15s/30s) on RateLimitError
 - **Error handling**: Exceptions logged and user notified in chat
-- **No persistence**: All state lost on restart (by design)
+- **Persistence**: SQLite database with encryption (data persists across restarts)
 - **i18n**: All UI strings in `locales/{ru,en}.json`, accessed via `core.i18n.t(key, locale)`
 
 ## Dependencies
@@ -214,6 +230,10 @@ Default set via `DEFAULT_LANGUAGE=ru` in `.env`. Users can switch per-session wi
 - `google-api-python-client>=2.100` / `google-auth>=2.23` — Google Docs integration
 - `pre-commit>=3.0` — Git hooks
 - `faster-whisper>=1.0` — Local GPU-accelerated STT (optional, in `requirements-local.txt`)
+- `sqlalchemy[asyncio]>=2.0` — Async ORM for SQLite
+- `aiosqlite>=0.19` — Async SQLite driver
+- `alembic>=1.13` — Database migrations
+- `cryptography>=41.0` — Fernet encryption for sensitive data
 
 ## Qwen Added Memories
 - Do not add Co-authored-by lines when suggesting git commit messages

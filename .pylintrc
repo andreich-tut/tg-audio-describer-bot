@@ -2,6 +2,9 @@
 # Use multiple processes to speed up Pylint
 jobs=1
 
+# Ignore migration files (Alembic conventions differ from PEP8)
+ignore=alembic/versions
+
 [MESSAGES CONTROL]
 disable=
     # Style/formatting — not real bugs
@@ -16,6 +19,8 @@ disable=
     too-many-return-statements,
     too-many-arguments,
     too-many-positional-arguments,
+    too-many-public-methods,
+    too-few-public-methods,
     duplicate-code,
     # Intentional patterns in async bot handlers
     broad-exception-caught,
@@ -28,6 +33,17 @@ disable=
     # False positives from dynamic APIs (Google API client, openai **kwargs)
     no-member,
     missing-kwoa,
+    # SQLAlchemy/Alembic conventions
+    invalid-name,  # Alembic migration files, SQLAlchemy func
+    not-callable,  # SQLAlchemy func.now() is dynamic
+    # Singleton pattern (database connection)
+    global-statement,
+    # Sync wrapper pattern (reimport asyncio for each wrapper)
+    redefined-outer-name,
+    reimported,
+    unnecessary-pass,  # Dataclasses with pass
+    # Refactor suggestions
+    no-else-return,
     # tools/ scripts importing from sibling scripts by path
     no-name-in-module,
     # GPU/optional packages not installed in CI (faster-whisper, whisperx, torch)

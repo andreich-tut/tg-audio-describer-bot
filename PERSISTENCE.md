@@ -225,7 +225,7 @@ await add_to_history_async(user_id, "user", "Hello!")
 await add_to_history_async(user_id, "assistant", "Hi there!")
 
 history = await get_history_async(user_id)  # Last MAX_HISTORY messages
-await clear_history_async(user_id))
+await clear_history_async(user_id)
 ```
 
 ---

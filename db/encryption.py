@@ -78,7 +78,7 @@ def decrypt(token: str) -> str:
         return value.decode("utf-8")
     except Exception as e:
         logger.error("Decryption failed: %s", e)
-        raise ValueError(f"Failed to decrypt: {e}")
+        raise ValueError(f"Failed to decrypt: {e}") from e
 
 
 def generate_key() -> str:
