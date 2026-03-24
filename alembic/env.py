@@ -10,8 +10,8 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-from db.database import DATABASE_URL
-from db.models import Base
+from infrastructure.database import DATABASE_URL
+from infrastructure.database.models import Base
 
 # Alembic Config object
 config = context.config

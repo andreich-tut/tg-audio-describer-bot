@@ -20,7 +20,7 @@ from config import (
     is_allowed,
     logger,
 )
-from services.yandex_oauth import get_oauth_url
+from infrastructure.external_api.yandex_client import get_oauth_url
 from shared.i18n import t
 from shared.utils import get_locale_from_callback, get_locale_from_message
 from state import (

@@ -16,10 +16,10 @@ from aiogram.enums import ParseMode
 from aiogram.types import BufferedInputFile
 
 from config import ALLOWED_USER_IDS, HF_TOKEN, logger
-from services.gdocs import is_gdocs_enabled, save_to_gdocs
-from services.llm import ask_ollama, format_note_ollama, summarize_ollama
-from services.obsidian import is_obsidian_enabled, save_note
-from services.stt import transcribe
+from infrastructure.external_api.groq_client import transcribe
+from infrastructure.external_api.llm_client import ask_ollama, format_note_ollama, summarize_ollama
+from infrastructure.storage.gdocs import is_gdocs_enabled, save_to_gdocs
+from infrastructure.storage.obsidian import is_obsidian_enabled, save_note
 from services.youtube import download_yt_audio, transcribe_diarized
 from shared.i18n import t
 from shared.keyboards import stop_keyboard, yt_summary_keyboard

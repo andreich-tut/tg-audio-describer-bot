@@ -15,9 +15,9 @@ from config import (
     is_allowed,
     logger,
 )
-from services.gdocs import gdocs_service
+from infrastructure.external_api.llm_client import ping_llm
+from infrastructure.storage.gdocs import gdocs_service
 from services.limits import check_groq, check_openrouter, format_limits_message
-from services.llm import ping_llm
 from shared.i18n import t
 from shared.keyboards import (
     LANGUAGE_CODES,
@@ -90,7 +90,7 @@ async def cmd_start_oauth(message: types.Message, state):
     # Exchange code for token
     from aiogram.methods import GetMe
 
-    from services.yandex_oauth import exchange_code, get_user_login
+    from infrastructure.external_api.yandex_client import exchange_code, get_user_login
 
     # Get bot username for redirect URI
     bot_info = await message.bot(GetMe())

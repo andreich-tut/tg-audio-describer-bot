@@ -27,7 +27,7 @@ from handlers.commands import router as commands_router
 from handlers.messages import router as messages_router
 from handlers.settings import router as settings_router
 from handlers.youtube_callbacks import router as youtube_callbacks_router
-from services.gdocs import gdocs_service
+from infrastructure.storage.gdocs import gdocs_service
 from shared.i18n import t
 
 # Telegram Bot

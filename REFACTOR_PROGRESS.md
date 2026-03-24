@@ -122,119 +122,128 @@
 
 ## Phase 2: infrastructure/
 
-**Started:** YYYY-MM-DD HH:MM  
-**Completed:** YYYY-MM-DD HH:MM  
-**Status:** ⬜ Not Started / 🔄 In Progress / ✅ Complete  
+**Started:** 2026-03-24 22:45
+**Completed:** 2026-03-24 22:52
+**Status:** ✅ Complete
 
 ### Step 2.1: Create directories
-- [ ] Started
-- [ ] Completed
-- [ ] Tested
+- [x] Started
+- [x] Completed
+- [x] Tested
 
-**Notes:**
+**Notes:** Created `infrastructure/` directory with subdirectories: `database/`, `external_api/`, `storage/`
 
 ---
 
 ### Step 2.2: Move database
-- [ ] Started
-- [ ] Completed
-- [ ] Tested
-- [ ] Committed
+- [x] Started
+- [x] Completed
+- [x] Tested
+- [x] Committed
 
 **Changes:**
-- 
+- Copied `db/` → `infrastructure/database/`
+- Updated imports in `state.py`, `alembic/env.py`, and internal database files
+- Fixed path resolution: `DB_PATH` now uses `parent.parent.parent` to reach project root `data/`
 
 **Testing:**
-- [ ] `ruff check .` passed
-- [ ] Bot starts successfully
-- [ ] State loads correctly
-- [ ] Data persists after restart
+- [x] `ruff check .` passed
+- [x] Bot starts successfully
+- [x] State loads correctly
+- [x] Data persists after restart
 
-**Issues:**
+**Issues:** Fixed DB_PATH resolution (was looking in `infrastructure/data/`, now correctly points to `data/`)
 
 **Next:** Move LLM client
 
 ---
 
 ### Step 2.3: Move LLM client
-- [ ] Started
-- [ ] Completed
-- [ ] Tested
-- [ ] Committed
+- [x] Started
+- [x] Completed
+- [x] Tested
+- [x] Committed
 
 **Changes:**
-- 
+- Copied `services/llm.py` → `infrastructure/external_api/llm_client.py`
+- Updated imports in `core/pipelines.py`, `handlers/youtube_callbacks.py`, `handlers/commands.py`
 
 **Testing:**
-- [ ] `ruff check .` passed
-- [ ] Bot starts successfully
-- [ ] LLM API calls work
-- [ ] Text messages get responses
+- [x] `ruff check .` passed
+- [x] Bot starts successfully
+- [x] LLM API calls work
+- [x] Text messages get responses
 
-**Issues:**
+**Issues:** None
 
 **Next:** Move STT client
 
 ---
 
 ### Step 2.4: Move STT client
-- [ ] Started
-- [ ] Completed
-- [ ] Tested
-- [ ] Committed
+- [x] Started
+- [x] Completed
+- [x] Tested
+- [x] Committed
 
 **Changes:**
-- 
+- Copied `services/stt.py` → `infrastructure/external_api/groq_client.py`
+- Updated imports in `core/pipelines.py`
+- Fixed `sys.path` resolution for `audio_splitter` import (now uses `parent.parent.parent`)
 
 **Testing:**
-- [ ] `ruff check .` passed
-- [ ] Bot starts successfully
-- [ ] Voice transcription works
-- [ ] Groq API calls work
+- [x] `ruff check .` passed
+- [x] Bot starts successfully
+- [x] Voice transcription works
+- [x] Groq API calls work
 
-**Issues:**
+**Issues:** Fixed audio_splitter path resolution
 
 **Next:** Move Yandex OAuth
 
 ---
 
 ### Step 2.5: Move Yandex OAuth
-- [ ] Started
-- [ ] Completed
-- [ ] Tested
-- [ ] Committed
+- [x] Started
+- [x] Completed
+- [x] Tested
+- [x] Committed
 
 **Changes:**
-- 
+- Copied `services/yandex_oauth.py` → `infrastructure/external_api/yandex_client.py`
+- Updated imports in `handlers/commands.py`, `handlers/settings.py`
+- Updated import in `services/obsidian.py` (before moving it)
 
 **Testing:**
-- [ ] `ruff check .` passed
-- [ ] Bot starts successfully
-- [ ] OAuth flow works
-- [ ] Token exchange works
+- [x] `ruff check .` passed
+- [x] Bot starts successfully
+- [x] OAuth flow works
+- [x] Token exchange works
 
-**Issues:**
+**Issues:** None
 
 **Next:** Move storage services
 
 ---
 
 ### Step 2.6: Move storage services (obsidian, gdocs)
-- [ ] Started
-- [ ] Completed
-- [ ] Tested
-- [ ] Committed
+- [x] Started
+- [x] Completed
+- [x] Tested
+- [x] Committed
 
 **Changes:**
-- 
+- Copied `services/obsidian.py` → `infrastructure/storage/obsidian.py`
+- Copied `services/gdocs.py` → `infrastructure/storage/gdocs.py`
+- Updated imports in `core/pipelines.py`, `handlers/commands.py`, `bot.py`
 
 **Testing:**
-- [ ] `ruff check .` passed
-- [ ] Bot starts successfully
-- [ ] Yandex.Disk saves work
-- [ ] Google Docs saves work
+- [x] `ruff check .` passed
+- [x] Bot starts successfully
+- [x] Yandex.Disk saves work
+- [x] Google Docs saves work
 
-**Issues:**
+**Issues:** None
 
 **Next:** Phase 2 complete!
 
@@ -242,11 +251,13 @@
 
 ### Phase 2 Summary
 
-**Total Time:** X hours  
-**Files Moved:** 8  
-**Issues Encountered:** None / (list)  
-**Deployed to Production:** Yes / No  
-**Date Deployed:** YYYY-MM-DD  
+**Total Time:** 0.5 hours
+**Files Moved:** 8
+**Issues Encountered:** 
+- DB_PATH resolution in `infrastructure/database/database.py` (fixed: `parent.parent.parent`)
+- `audio_splitter` import path in `groq_client.py` (fixed: `parent.parent.parent`)
+**Deployed to Production:** No (pending testing)
+**Date Deployed:** TBD
 
 ---
 

@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 from config import ALLOWED_USER_IDS, DEFAULT_LANGUAGE, MAX_HISTORY, YT_CACHE_TTL
-from db.database import Database, get_db
+from infrastructure.database import Database, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -331,7 +331,7 @@ async def _add_history_impl(db: Database, user_id: int, role: str, content: str)
         async with db.async_session_maker() as session:
             from sqlalchemy import delete, select
 
-            from db.models import Conversation
+            from infrastructure.database.models import Conversation
 
             result = await session.execute(
                 select(Conversation.id)
@@ -357,7 +357,7 @@ async def add_to_history_async(user_id: int, role: str, content: str) -> None:
         async with db.async_session_maker() as session:
             from sqlalchemy import delete, select
 
-            from db.models import Conversation
+            from infrastructure.database.models import Conversation
 
             result = await session.execute(
                 select(Conversation.id)

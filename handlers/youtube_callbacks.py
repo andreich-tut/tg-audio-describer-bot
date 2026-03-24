@@ -9,7 +9,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 
 from config import logger
-from services.llm import summarize_ollama
+from infrastructure.external_api.llm_client import summarize_ollama
 from shared.i18n import t
 from shared.keyboards import YT_LEVEL_LABELS, YT_LEVEL_MAP, yt_summary_keyboard
 from shared.utils import get_locale_from_callback
