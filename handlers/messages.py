@@ -8,8 +8,8 @@ from aiogram import Bot, F, Router, types
 from aiogram.filters import StateFilter
 
 from config import YT_URL_RE, is_allowed, logger
-from core.pipelines import process_audio, process_text, process_youtube
-from services.youtube import wants_diarize
+from domain.audio_processor import process_audio, process_text, process_youtube
+from domain.services.youtube import wants_diarize
 from shared.i18n import get_user_locale, t
 from shared.utils import audio_suffix, get_audio_from_msg, get_locale_from_message, run_as_cancellable
 from state import active_tasks
