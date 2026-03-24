@@ -12,7 +12,7 @@ disable=
     missing-module-docstring,
     missing-class-docstring,
     line-too-long,
-    # Refactor hints — subjective complexity thresholds
+    # Refactor hints — not real bugs
     too-many-locals,
     too-many-branches,
     too-many-statements,
@@ -51,6 +51,9 @@ disable=
     # Unused in some locales/callbacks by design
     unused-argument,
     unused-variable,
+    # Re-export modules (intentional wildcard imports in state.py, config.py, bot.py)
+    wildcard-import,
+    unused-wildcard-import,
 
 [FORMAT]
 max-line-length=120
