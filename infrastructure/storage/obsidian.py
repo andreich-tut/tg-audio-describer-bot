@@ -13,13 +13,13 @@ from pathlib import Path
 
 import httpx
 
-from config import (
+from shared.config import (
     OBSIDIAN_INBOX_FOLDER,
     OBSIDIAN_VAULT_PATH,
     YANDEX_DISK_PATH,
 )
 from infrastructure.external_api.yandex_client import refresh_access_token
-from state import get_user_setting, get_user_setting_json
+from application.state import get_user_setting, get_user_setting_json
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ async def _save_webdav_oauth(filename: str, content: str, cfg: dict, user_id: in
 
     Returns tuple of (location, disk_url).
     """
-    from state import set_user_setting_json
+    from application.state import set_user_setting_json
 
     oauth_token = cfg["oauth_token"]
 

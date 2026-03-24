@@ -9,15 +9,25 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import CallbackQuery
 
 from application.services.rate_limiter import check_groq, check_openrouter, format_limits_message
-from config import (
+from application.state import (
+    active_tasks,
+    clear_history,
+    get_history,
+    get_language,
+    get_mode,
+    set_language,
+    user_gdocs,
+    user_modes,
+)
+from infrastructure.external_api.llm_client import ping_llm
+from infrastructure.storage.gdocs import gdocs_service
+from shared.config import (
     GDOCS_DOCUMENT_ID,
     LLM_MODEL,
     WHISPER_MODEL,
     is_allowed,
     logger,
 )
-from infrastructure.external_api.llm_client import ping_llm
-from infrastructure.storage.gdocs import gdocs_service
 from shared.i18n import t
 from shared.keyboards import (
     LANGUAGE_CODES,
@@ -28,16 +38,6 @@ from shared.keyboards import (
     mode_keyboard,
 )
 from shared.utils import get_locale_from_callback, get_locale_from_message
-from state import (
-    active_tasks,
-    clear_history,
-    get_history,
-    get_language,
-    get_mode,
-    set_language,
-    user_gdocs,
-    user_modes,
-)
 from version import __version__
 
 router = Router(name="commands")

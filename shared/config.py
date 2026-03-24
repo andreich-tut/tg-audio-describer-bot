@@ -122,7 +122,7 @@ DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE", "ru")  # Supported: 'ru', 'en'
 # ──────────────────────────────────────────────
 # Logging
 # ──────────────────────────────────────────────
-LOG_DIR = Path(__file__).parent / "logs"
+LOG_DIR = _PROJECT_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 _log_fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")

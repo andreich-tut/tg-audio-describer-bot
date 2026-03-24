@@ -5,8 +5,8 @@ Google Docs: optional integration for saving transcriptions.
 import asyncio
 import logging
 
-from config import GDOCS_CREDENTIALS_FILE, GDOCS_DOCUMENT_ID
-from state import user_gdocs
+from shared.config import GDOCS_CREDENTIALS_FILE, GDOCS_DOCUMENT_ID
+from application.state import user_gdocs
 
 logger = logging.getLogger(__name__)
 

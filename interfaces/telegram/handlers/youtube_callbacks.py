@@ -8,12 +8,12 @@ from aiogram import F, Router
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 
-from config import logger
+from application.state import yt_transcripts
 from infrastructure.external_api.llm_client import summarize_ollama
+from shared.config import logger
 from shared.i18n import t
 from shared.keyboards import YT_LEVEL_LABELS, YT_LEVEL_MAP, yt_summary_keyboard
 from shared.utils import get_locale_from_callback
-from state import yt_transcripts
 
 router = Router(name="youtube_callbacks")
 

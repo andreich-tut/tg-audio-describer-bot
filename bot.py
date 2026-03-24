@@ -14,7 +14,12 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
 import state
-from config import (
+from infrastructure.storage.gdocs import gdocs_service
+from interfaces.telegram.handlers.commands import router as commands_router
+from interfaces.telegram.handlers.messages import router as messages_router
+from interfaces.telegram.handlers.settings import router as settings_router
+from interfaces.telegram.handlers.youtube_callbacks import router as youtube_callbacks_router
+from shared.config import (
     ALLOWED_USER_IDS,
     BOT_TOKEN,
     DEFAULT_LANGUAGE,
@@ -23,11 +28,6 @@ from config import (
     WHISPER_MODEL,
     logger,
 )
-from handlers.commands import router as commands_router
-from handlers.messages import router as messages_router
-from handlers.settings import router as settings_router
-from handlers.youtube_callbacks import router as youtube_callbacks_router
-from infrastructure.storage.gdocs import gdocs_service
 from shared.i18n import t
 
 # Telegram Bot

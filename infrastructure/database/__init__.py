@@ -9,10 +9,11 @@ Provides persistent storage for:
 - Free-tier usage counters
 """
 
-from infrastructure.database.database import Database, get_db
+from infrastructure.database.database import DATABASE_URL, Database, get_db
 from infrastructure.database.models import Base, Conversation, FreeUse, OAuthToken, User, UserSetting
 
 __all__ = [
+    "DATABASE_URL",
     "Base",
     "User",
     "UserSetting",

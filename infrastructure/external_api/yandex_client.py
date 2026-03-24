@@ -11,7 +11,7 @@ from typing import Optional
 
 import httpx
 
-from config import (
+from shared.config import (
     YANDEX_OAUTH_CLIENT_ID,
     YANDEX_OAUTH_CLIENT_SECRET,
 )

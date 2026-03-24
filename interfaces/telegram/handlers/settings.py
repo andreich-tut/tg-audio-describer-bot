@@ -10,7 +10,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from config import (
+from application.state import (
+    clear_user_settings_section,
+    get_user_setting,
+    get_user_setting_json,
+    set_user_setting,
+)
+from infrastructure.external_api.yandex_client import get_oauth_url
+from shared.config import (
     ALLOWED_USER_IDS,
     LLM_BASE_URL,
     LLM_MODEL,
@@ -20,15 +27,8 @@ from config import (
     is_allowed,
     logger,
 )
-from infrastructure.external_api.yandex_client import get_oauth_url
 from shared.i18n import t
 from shared.utils import get_locale_from_callback, get_locale_from_message
-from state import (
-    clear_user_settings_section,
-    get_user_setting,
-    get_user_setting_json,
-    set_user_setting,
-)
 
 router = Router(name="settings")
 

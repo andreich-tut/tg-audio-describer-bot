@@ -12,7 +12,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from config import GROQ_API_KEY, WHISPER_BACKEND, WHISPER_DEVICE, WHISPER_MODEL
+from shared.config import GROQ_API_KEY, WHISPER_BACKEND, WHISPER_DEVICE, WHISPER_MODEL
 
 # Make tools/ importable
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "tools"))
