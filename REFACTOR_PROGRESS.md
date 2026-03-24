@@ -334,11 +334,83 @@
 
 ---
 
+## Phase 3.5: Cleanup & Bugfixes
+
+**Started:** YYYY-MM-DD HH:MM
+**Completed:** YYYY-MM-DD HH:MM
+**Status:** ⬜ Not Started
+
+### Step 3.5.1: Fix shared/config.py LOG_DIR
+- [ ] Started
+- [ ] Completed
+- [ ] Tested
+- [ ] Committed
+
+**Changes:**
+-
+
+**Notes:** `LOG_DIR = Path(__file__).parent / "logs"` creates `shared/logs/` instead of root `logs/`. Change to `_PROJECT_DIR / "logs"`. Delete `shared/logs/`.
+
+---
+
+### Step 3.5.2: Fix infrastructure/database/__init__.py DATABASE_URL export
+- [ ] Started
+- [ ] Completed
+- [ ] Tested
+- [ ] Committed
+
+**Changes:**
+-
+
+**Notes:** `alembic/env.py` imports `DATABASE_URL` but it's not in `__init__.py` exports. Add it.
+
+---
+
+### Step 3.5.3: Standardize imports in infrastructure/
+- [ ] Started
+- [ ] Completed
+- [ ] Tested
+- [ ] Committed
+
+**Changes:**
+-
+
+**Notes:** Change `from state import` → `from application.state import` and `from config import` → `from shared.config import` in all infrastructure/ files.
+
+---
+
+### Step 3.5.4: Delete dead old files
+- [ ] Started
+- [ ] Completed
+- [ ] Tested
+- [ ] Committed
+
+**Changes:**
+-
+
+**Notes:** Delete: `core/i18n.py`, `core/keyboards.py`, `core/helpers.py`, `db/` directory, `services/llm.py`, `services/stt.py`, `services/yandex_oauth.py`, `services/obsidian.py`, `services/gdocs.py`, `services/limits.py`
+
+---
+
+### Phase 3.5 Summary
+
+**Total Time:** X hours
+**Files Deleted:** ~12
+**Issues Encountered:**
+**Deployed to Production:**
+**Date Deployed:**
+
+---
+
 ## Phase 4: domain/
 
 **Started:** 2026-03-25 00:10
 **Completed:** 2026-03-25 00:15
-**Status:** ✅ Complete
+**Status:** ⚠️ Done locally but NOT committed to git
+
+**WARNING:** `domain/` directory exists locally and `handlers/messages.py` imports from it,
+but `domain/` is untracked by git. A fresh `git clone` or deploy will break. Must run Phase 3.5
+first (to clean up dead files), then commit `domain/` properly.
 
 ### Step 4.1: Create directories
 - [x] Started
@@ -352,20 +424,19 @@
 - [x] Started
 - [x] Completed
 - [x] Tested
-- [x] Committed
+- [ ] Committed ← NOT committed (domain/ untracked)
 
 **Changes:**
 - Copied `core/pipelines.py` → `domain/audio_processor.py`
-- Updated imports: `services.youtube` → `domain.services.youtube`
+- Updated imports: `services.youtube` → `domain.services.youtube`, `state` → `application.state`
 - Updated import in `handlers/messages.py`
+- Old `core/pipelines.py` NOT deleted (still exists as dead code)
 
 **Testing:**
-- [x] Bot starts successfully
-- [x] All imports work
+- [x] Bot starts successfully (locally)
+- [x] All imports work (locally)
 
-**Issues:** None
-
-**Next:** Move YouTube service
+**Issues:** Old `core/pipelines.py` still references `services.youtube` (dead import path)
 
 ---
 
@@ -373,19 +444,18 @@
 - [x] Started
 - [x] Completed
 - [x] Tested
-- [x] Committed
+- [ ] Committed ← NOT committed (domain/ untracked)
 
 **Changes:**
 - Copied `services/youtube.py` → `domain/services/youtube.py`
 - Fixed `transcribe_diarized` path resolution (now uses `parent.parent.parent` for tools/)
+- Old `services/youtube.py` NOT deleted
 
 **Testing:**
-- [x] Bot starts successfully
-- [x] YouTube imports work
+- [x] Bot starts successfully (locally)
+- [x] YouTube imports work (locally)
 
 **Issues:** Fixed tools path resolution for whisperX import
-
-**Next:** Move prompts
 
 ---
 
@@ -393,15 +463,16 @@
 - [x] Started
 - [x] Completed
 - [x] Tested
-- [x] Committed
+- [ ] Committed ← NOT committed (domain/ untracked)
 
 **Changes:**
 - Copied `prompts/*.md` → `domain/prompts/*.md`
 - Updated paths in `shared/config.py`: `prompts/` → `domain/prompts/`
+- Old `prompts/` NOT deleted
 
 **Testing:**
-- [x] Bot starts successfully
-- [x] Prompt loading works
+- [x] Bot starts successfully (locally)
+- [x] Prompt loading works (locally)
 
 **Issues:** None
 
@@ -413,7 +484,9 @@
 **Files Moved:** 8 (audio_processor.py, youtube.py, 5 prompts, __init__.py files)
 **Issues Encountered:**
 - Fixed `transcribe_diarized` tools path resolution (now uses `parent.parent.parent`)
-**Deployed to Production:** No (pending testing)
+- Old files NOT deleted (need Phase 3.5 cleanup first, then re-commit Phase 4 properly)
+- `domain/` NOT committed to git — deploy from git will break
+**Deployed to Production:** No
 **Date Deployed:** TBD
 
 ---

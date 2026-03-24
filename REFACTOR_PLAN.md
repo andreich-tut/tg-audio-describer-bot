@@ -387,7 +387,140 @@ git stash
 
 ---
 
-## Phase 4: Create `domain/` (High Risk, 8 hours)
+## Phase 3.5: Cleanup & Bugfixes (Low Risk, 1 hour)
+
+**IMPORTANT:** Phases 1-3 used `cp` (copy) instead of `mv` (move), leaving all original files
+in place as dead code. This phase fixes bugs introduced during the copy and removes dead files.
+
+### Known Bugs to Fix
+
+**Bug 1: `shared/config.py` LOG_DIR creates logs in wrong directory**
+- `shared/config.py` line 125: `LOG_DIR = Path(__file__).parent / "logs"` → creates `shared/logs/`
+- Should use `_PROJECT_DIR / "logs"` to create logs in project root `logs/`
+- Currently two log directories exist (`logs/` and `shared/logs/`)
+
+**Bug 2: `infrastructure/database/__init__.py` missing DATABASE_URL export**
+- `alembic/env.py` imports `DATABASE_URL` from `infrastructure.database`
+- But `__init__.py` doesn't export it → alembic migrations will fail with ImportError
+- Add `DATABASE_URL` to the imports and `__all__` in `infrastructure/database/__init__.py`
+
+### Working State After Phase 3.5
+
+```
+✅ Bot starts and responds to all commands
+✅ Logs go to project-root logs/ only (no shared/logs/)
+✅ Alembic migrations work
+✅ No dead duplicate files
+✅ Can deploy to production
+```
+
+### Steps
+
+**Step 3.5.1: Fix shared/config.py LOG_DIR**
+```python
+# In shared/config.py, change:
+LOG_DIR = Path(__file__).parent / "logs"
+# To:
+LOG_DIR = _PROJECT_DIR / "logs"
+```
+```bash
+# Delete the spurious shared/logs/ directory
+rm -rf shared/logs/
+# TEST: python bot.py, check logs appear in project-root logs/ only
+git add shared/config.py && git commit -m "fix: LOG_DIR path in shared/config.py"
+```
+
+**Step 3.5.2: Fix infrastructure/database/__init__.py**
+```python
+# Add DATABASE_URL to imports:
+from infrastructure.database.database import DATABASE_URL, Database, get_db
+
+# Add to __all__:
+__all__ = [
+    "DATABASE_URL",
+    # ... existing exports
+]
+```
+```bash
+# TEST: python -c "from infrastructure.database import DATABASE_URL; print(DATABASE_URL)"
+git add infrastructure/database/__init__.py && git commit -m "fix: export DATABASE_URL from infrastructure.database"
+```
+
+**Step 3.5.3: Standardize imports in infrastructure/ files**
+
+Infrastructure files should import from `application.state` and `shared.config`, not
+from the backward-compat re-export shims (`state`, `config`).
+
+```bash
+# Files to update:
+# infrastructure/external_api/llm_client.py: from state import → from application.state import
+# infrastructure/storage/gdocs.py:           from state import → from application.state import
+# infrastructure/storage/obsidian.py:        from state import → from application.state import
+# infrastructure/external_api/llm_client.py: from config import → from shared.config import
+# infrastructure/external_api/groq_client.py: from config import → from shared.config import
+# infrastructure/external_api/yandex_client.py: from config import → from shared.config import
+# infrastructure/storage/gdocs.py:           from config import → from shared.config import
+# infrastructure/storage/obsidian.py:        from config import → from shared.config import
+
+# TEST: python bot.py, send voice + text message
+git add infrastructure/ && git commit -m "refactor: standardize imports in infrastructure/"
+```
+
+**Step 3.5.4: Delete dead old files**
+
+These files were copied to new locations in Phases 1-3 and are no longer imported by anything.
+
+```bash
+# Phase 1 originals (moved to shared/)
+rm core/i18n.py core/keyboards.py core/helpers.py
+# core/pipelines.py stays — will be moved in Phase 4
+# core/__init__.py stays until core/ is empty
+
+# Phase 2 originals (moved to infrastructure/)
+rm db/database.py db/models.py db/encryption.py db/__init__.py
+rmdir db/  # or rm -r db/__pycache__ && rmdir db/
+rm services/llm.py services/stt.py services/yandex_oauth.py
+rm services/obsidian.py services/gdocs.py
+# services/youtube.py stays — will be moved in Phase 4
+# services/limits.py already moved in Phase 3
+
+# Phase 3 originals (moved to application/)
+rm services/limits.py
+
+# Update alembic/env.py if it references db.* paths
+# (already updated in Phase 2, just verify)
+
+# TEST: python bot.py, full test
+git add -A && git commit -m "refactor: remove dead duplicate files from Phases 1-3"
+```
+
+**Step 3.5.5: Clean up empty directories**
+```bash
+# Remove __pycache__ from deleted dirs
+rm -rf db/__pycache__ services/__pycache__ core/__pycache__
+
+# Don't remove core/ yet (still has pipelines.py)
+# Don't remove services/ yet (still has youtube.py)
+
+# TEST: python bot.py
+git add -A && git commit -m "chore: clean up empty directories and pycache"
+```
+
+### Rollback Plan
+
+```bash
+# If anything breaks:
+git stash
+# Bot reverts to Phase 3 state (still working via re-exports)
+```
+
+---
+
+## Phase 4: Create `domain/` (High Risk, 4 hours)
+
+**NOTE:** A partial `domain/` directory may already exist (untracked) from a previous attempt.
+If so, decide: use it as a starting point, or delete it and start fresh.
+The structure below reflects the actual implementation that was started.
 
 ### Working State After Phase 4
 
@@ -405,34 +538,63 @@ git stash
 
 **Step 4.1: Create directories**
 ```bash
-mkdir -p domain/{voice,youtube,notes,chat}
+mkdir -p domain/services
 ```
 
-**Step 4.2: Move pipelines (core business logic)**
+**Step 4.2: Move pipelines → domain/audio_processor.py**
 ```bash
-# Copy and split
-cp core/pipelines.py domain/voice/pipeline.py
+# Copy pipelines to domain
+cp core/pipelines.py domain/audio_processor.py
 
-# Update imports
-find . -name "*.py" -exec sed -i 's/from core\.pipelines/from domain.voice.pipeline/g' {} \;
+# In domain/audio_processor.py, update imports:
+#   from state import ...        → from application.state import ...
+#   from config import ...       → from shared.config import ...  (if applicable)
+#   from services.youtube import → from domain.services.youtube import
+
+# Update imports in handlers
+find . -name "*.py" -exec sed -i 's/from core\.pipelines/from domain.audio_processor/g' {} \;
+
+# Delete old file
+rm core/pipelines.py
 
 # TEST: python bot.py, send voice message
-git add domain/voice/pipeline.py && git commit -m "refactor: move pipelines to domain/voice/"
+git add domain/audio_processor.py && git rm core/pipelines.py
+git commit -m "refactor: move pipelines to domain/audio_processor"
 ```
 
-**Step 4.3: Move YouTube**
+**Step 4.3: Move YouTube → domain/services/youtube.py**
 ```bash
-# Copy and split
-cp services/youtube.py domain/youtube/downloader.py
+# Copy YouTube service
+cp services/youtube.py domain/services/youtube.py
 
-# Update imports
-find . -name "*.py" -exec sed -i 's/from services\.youtube/from domain.youtube.downloader/g' {} \;
+# In domain/services/youtube.py, fix sys.path for tools/:
+#   Path(__file__).parent.parent / "tools"  →  Path(__file__).parent.parent.parent / "tools"
+# Update config import:
+#   from config import → from shared.config import  (if applicable)
+
+# Update imports in domain/audio_processor.py and handlers/
+find . -name "*.py" -exec sed -i 's/from services\.youtube/from domain.services.youtube/g' {} \;
+
+# Delete old file
+rm services/youtube.py
 
 # TEST: python bot.py, send YouTube link
-git add domain/youtube/downloader.py && git commit -m "refactor: move youtube to domain/"
+git add domain/services/youtube.py && git rm services/youtube.py
+git commit -m "refactor: move youtube to domain/services/"
 ```
 
-**Step 4.4: Final testing**
+**Step 4.4: Clean up empty old directories**
+```bash
+# Remove core/ if empty (i18n, keyboards, helpers deleted in 3.5; pipelines deleted above)
+rm -f core/__init__.py && rm -rf core/__pycache__ && rmdir core/
+
+# Remove services/ if empty (all files moved)
+rm -f services/__init__.py && rm -rf services/__pycache__ && rmdir services/
+
+git add -A && git commit -m "refactor: remove empty core/ and services/ directories"
+```
+
+**Step 4.5: Final testing**
 ```bash
 # Run all checks
 venv/bin/ruff check .
@@ -455,7 +617,7 @@ docker logs -f tg-voice
 ```bash
 # If business logic fails:
 git stash
-# Bot reverts to Phase 3 state (still working)
+# Bot reverts to Phase 3.5 state (still working)
 ```
 
 ---
@@ -499,27 +661,36 @@ EOF
 git add interfaces/telegram/bot.py bot.py && git commit -m "refactor: move bot to interfaces/ with re-export"
 ```
 
-**Step 5.3: Move handlers**
+**Step 5.3: Move handlers (copy, update imports, delete originals)**
 ```bash
 # Commands
 cp handlers/commands.py interfaces/telegram/handlers/commands.py
-find . -path "./handlers/*" -prune -o -name "*.py" -exec sed -i 's/from handlers\.commands/from interfaces.telegram.handlers.commands/g' {} \;
+find . -name "*.py" -exec sed -i 's/from handlers\.commands/from interfaces.telegram.handlers.commands/g' {} \;
+# Update imports inside the new file: from config → from shared.config, from state → from application.state
+rm handlers/commands.py
 git add interfaces/telegram/handlers/commands.py && git commit -m "refactor: move commands to interfaces/"
 
 # Messages
 cp handlers/messages.py interfaces/telegram/handlers/messages.py
-find . -path "./handlers/*" -prune -o -name "*.py" -exec sed -i 's/from handlers\.messages/from interfaces.telegram.handlers.messages/g' {} \;
+find . -name "*.py" -exec sed -i 's/from handlers\.messages/from interfaces.telegram.handlers.messages/g' {} \;
+rm handlers/messages.py
 git add interfaces/telegram/handlers/messages.py && git commit -m "refactor: move messages to interfaces/"
 
 # Settings
 cp handlers/settings.py interfaces/telegram/handlers/settings.py
-find . -path "./handlers/*" -prune -o -name "*.py" -exec sed -i 's/from handlers\.settings/from interfaces.telegram.handlers.settings/g' {} \;
+find . -name "*.py" -exec sed -i 's/from handlers\.settings/from interfaces.telegram.handlers.settings/g' {} \;
+rm handlers/settings.py
 git add interfaces/telegram/handlers/settings.py && git commit -m "refactor: move settings to interfaces/"
 
 # YouTube callbacks
 cp handlers/youtube_callbacks.py interfaces/telegram/handlers/youtube.py
-find . -path "./handlers/*" -prune -o -name "*.py" -exec sed -i 's/from handlers\.youtube_callbacks/from interfaces.telegram.handlers.youtube/g' {} \;
+find . -name "*.py" -exec sed -i 's/from handlers\.youtube_callbacks/from interfaces.telegram.handlers.youtube/g' {} \;
+rm handlers/youtube_callbacks.py
 git add interfaces/telegram/handlers/youtube.py && git commit -m "refactor: move youtube_callbacks to interfaces/"
+
+# Clean up empty handlers/
+rm -f handlers/__init__.py && rm -rf handlers/__pycache__ && rmdir handlers/
+git add -A && git commit -m "refactor: remove empty handlers/ directory"
 ```
 
 **Step 5.4: Final testing**
@@ -560,9 +731,10 @@ git stash
 | **1. shared/** | 4 | ~400 | 2h | Low | ✅ After 2h |
 | **2. infrastructure/** | 8 | ~800 | 4h | Medium | ✅ After 4h |
 | **3. application/** | 4 | ~600 | 4h | Medium | ✅ After 4h |
-| **4. domain/** | 6 | ~600 | 8h | High | ✅ After 8h |
+| **3.5. cleanup** | 0 (delete ~12) | ~0 | 1h | Low | ✅ After 1h |
+| **4. domain/** | 2 | ~400 | 4h | High | ✅ After 4h |
 | **5. interfaces/** | 8 | ~1000 | 6h | High | ✅ After 6h |
-| **Total** | **30** | **~3400** | **24h** | - | **After EACH phase** |
+| **Total** | **26** | **~3200** | **21h** | - | **After EACH phase** |
 
 ---
 
@@ -657,7 +829,7 @@ python bot.py
 |------|-------|---------------------|
 | 1 | shared/ | ✅ End of Week 1 |
 | 2 | infrastructure/ | ✅ End of Week 2 |
-| 3 | application/ | ✅ End of Week 3 |
+| 3 | application/ + cleanup (3.5) | ✅ End of Week 3 |
 | 4 | domain/ | ✅ End of Week 4 |
 | 5 | interfaces/ | ✅ End of Week 5 |
 
@@ -667,7 +839,7 @@ python bot.py
 |-----|-------|------------|
 | Day 1 | Phase 1 | ✅ Evening |
 | Day 2 | Phase 2 | ✅ Evening |
-| Day 3 | Phase 3 | ✅ Evening |
+| Day 3 | Phase 3 + 3.5 | ✅ Evening |
 | Day 4 | Phase 4 | ✅ Evening |
 | Day 5 | Phase 5 + testing | ✅ Evening |
 
@@ -680,3 +852,11 @@ python bot.py
 - **Docker:** No changes needed (paths internal to image)
 - **CI/CD:** Update pylint workflow if file paths change significantly
 - **Each phase is independent** - can stop after any phase
+
+## Lessons Learned (Phases 1-3)
+
+- **Always `mv` then delete, not `cp` and forget.** Phases 1-3 used `cp` and never deleted originals, leaving ~12 dead duplicate files. Phase 3.5 was added to clean this up. Future phases should `rm` the original immediately after verifying the copy works.
+- **Path calculations break when files move.** `Path(__file__).parent / "logs"` and `Path(__file__).parent.parent / "tools"` need adjustment when a file moves deeper into the directory tree. Check ALL relative path expressions, not just the obvious ones.
+- **Re-exports in `__init__.py` must be kept in sync.** When `infrastructure/database/database.py` defines `DATABASE_URL`, the package `__init__.py` must export it too, or downstream consumers (alembic) break.
+- **New-layer files should import from new-layer paths.** Files in `infrastructure/` should import `from shared.config` and `from application.state`, not from the backward-compat shims (`config`, `state`). The shims are for old code that hasn't been migrated yet.
+- **Untracked work must be committed or discarded.** A partial Phase 4 (`domain/`) was started and left untracked. Handlers were updated to import from it, making `git clone` deployments broken. Always commit or revert partial work.
