@@ -16,7 +16,9 @@ from aiogram.types import BotCommand
 from application.state import initialize_state, shutdown_state
 from infrastructure.storage.gdocs import gdocs_service
 from interfaces.telegram.handlers.commands import router as commands_router
+from interfaces.telegram.handlers.diagnostics import router as diagnostics_router
 from interfaces.telegram.handlers.messages import router as messages_router
+from interfaces.telegram.handlers.oauth_callback import router as oauth_callback_router
 from interfaces.telegram.handlers.settings import router as settings_router
 from interfaces.telegram.handlers.youtube_callbacks import router as youtube_callbacks_router
 from shared.config import (
@@ -34,8 +36,16 @@ from shared.i18n import t
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# Include routers: settings (FSM) first, then commands, youtube callbacks, messages (catch-all last)
-dp.include_routers(settings_router, commands_router, youtube_callbacks_router, messages_router)
+# Include routers: settings (FSM) first, oauth deep-link before plain /start,
+# then commands, diagnostics, youtube callbacks, messages (catch-all last)
+dp.include_routers(
+    settings_router,
+    oauth_callback_router,
+    commands_router,
+    diagnostics_router,
+    youtube_callbacks_router,
+    messages_router,
+)
 
 
 async def main():

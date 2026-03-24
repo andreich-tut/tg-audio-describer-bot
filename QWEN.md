@@ -31,18 +31,32 @@ shared/
   utils.py          — Utilities: audio_suffix, escape_md, run_as_cancellable, get_audio_from_msg
   version.py        — Reads __version__ from pyproject.toml
 application/
-  state.py          — Database-backed state: SQLite with encryption, full async API
-  pipelines.py      — Main processing: process_audio(), process_youtube(), process_text()
+  state.py          — Runtime in-memory state + re-exports from sub-modules; initialize_state()
+  conversation.py   — Conversation history CRUD (sync + async wrappers)
+  user_settings.py  — Per-user settings CRUD (sync + async wrappers)
+  free_uses.py      — Free-use counter CRUD (sync + async wrappers)
+  oauth_state.py    — OAuth token storage and get_or_create_user()
+  migration.py      — Legacy data migration helper
+  pipelines/
+    __init__.py     — Re-exports process_audio, process_text, process_youtube
+    audio.py        — Audio processing pipeline
+    text.py         — Text processing pipeline
+    youtube.py      — YouTube processing pipeline
   services/
     rate_limiter.py — Rate limit checking: OpenRouter key info + cached Groq headers
 infrastructure/
   database/
     models.py       — SQLAlchemy ORM models (users, settings, oauth_tokens, conversations, free_uses)
-    database.py     — Async database service with CRUD operations
+    database.py     — Async Database class with repo delegation; init_db(), close()
+    user_repo.py    — UserRepo: user + settings CRUD
+    conversation_repo.py — ConversationRepo: history CRUD
+    oauth_repo.py   — OAuthRepo: OAuth token CRUD
     encryption.py   — Fernet encryption for sensitive data (OAuth tokens, API keys)
+    migrations/     — SQLAlchemy migration scripts
   external_api/
     groq_client.py  — Groq cloud STT (Whisper via API)
-    llm_client.py   — LLM chat (OpenAI SDK): ask_ollama(), summarize_ollama(), format_note_ollama()
+    llm_client.py   — Low-level LLM client: _get_client(), _get_model(), ping_llm(), _chat_with_retry()
+    llm_operations.py — High-level LLM ops: ask_ollama(), summarize_ollama(), format_note_ollama()
     youtube.py      — YouTube audio download (yt-dlp), optional whisperX diarization
     yandex_client.py — Yandex OAuth 2.0 flow for Yandex.Disk access
   storage/
@@ -50,13 +64,14 @@ infrastructure/
     gdocs.py        — Google Docs integration (optional)
 interfaces/telegram/
   handlers/
-    commands.py     — All /command handlers + inline callback query handlers (mode, lang, cancel, OAuth)
+    commands.py     — /start, /mode, /stop, /clear, /model, /savedoc + mode/cancel callbacks
+    diagnostics.py  — /ping, /limits, /lang + lang callback
     messages.py     — Message type handlers: voice, audio, video_note, document, video, text
     youtube_callbacks.py — YouTube summary detail-level inline button handlers
-    settings.py     — /settings command, per-user API credentials, OAuth login
-alembic/
-  env.py            — Alembic migration environment
-  versions/         — Migration scripts
+    settings.py     — /settings command entry point
+    settings_ui.py  — Settings keyboard/text builders, key metadata
+    settings_oauth.py — OAuth login/disconnect callbacks for Yandex.Disk
+    oauth_callback.py — OAuth deep-link handler: /start oauth_<code>_<state>
 prompts/
   system.md         — Main chat system prompt
   summary_brief.md  — Brief YouTube summary prompt
@@ -175,18 +190,18 @@ python bot.py
 - Conversation history: persisted in SQLite database
 
 ## Bot Commands
-| Command | Handler | Notes |
-|---------|---------|-------|
-| `/start` | `cmd_start()` | Shows help, version, and available commands |
-| `/mode` | `cmd_mode()` | Inline keyboard to switch: chat / transcribe / note |
-| `/stop` | `cmd_stop()` | Cancel active processing task (also: "stop" / "стоп" text) |
-| `/clear` | `cmd_clear()` | Clears user's conversation history |
-| `/model` | `cmd_model()` | Shows current LLM_MODEL and WHISPER_MODEL |
-| `/ping` | `cmd_ping()` | Tests LLM API connection |
-| `/limits` | `cmd_limits()` | Shows OpenRouter + Groq free-tier usage |
-| `/lang` | `cmd_lang()` | Inline keyboard to switch UI language (ru/en) |
-| `/savedoc` | `cmd_savedoc()` | Toggle Google Docs saving (opt-in) |
-| `/settings` | `cmd_settings()` | Personal API credentials and storage settings |
+| Command | Handler file | Notes |
+|---------|-------------|-------|
+| `/start` | `commands.py` | Shows help, version, and available commands |
+| `/mode` | `commands.py` | Inline keyboard to switch: chat / transcribe / note |
+| `/stop` | `commands.py` | Cancel active processing task (also: "stop" / "стоп" text) |
+| `/clear` | `commands.py` | Clears user's conversation history |
+| `/model` | `commands.py` | Shows current LLM_MODEL and WHISPER_MODEL |
+| `/savedoc` | `commands.py` | Toggle Google Docs saving (opt-in) |
+| `/ping` | `diagnostics.py` | Tests LLM API connection |
+| `/limits` | `diagnostics.py` | Shows OpenRouter + Groq free-tier usage |
+| `/lang` | `diagnostics.py` | Inline keyboard to switch UI language (ru/en) |
+| `/settings` | `settings.py` | Personal API credentials and storage settings |
 
 Voice, audio, and text message handlers check `is_allowed()` before processing.
 

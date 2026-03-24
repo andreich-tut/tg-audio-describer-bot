@@ -192,9 +192,19 @@ Modular design using aiogram 3 Routers:
 ```
 bot.py                          # Entrypoint: bot init, router assembly
 shared/                         # Cross-cutting: config, i18n, keyboards, utils
-application/                    # State management, processing pipelines, rate limiting
-infrastructure/                 # DB, external APIs (LLM, Groq, YouTube, Yandex), storage
-interfaces/telegram/handlers/   # aiogram Routers: commands, messages, youtube callbacks, settings
+application/
+  state.py                      # Runtime in-memory state + re-exports
+  conversation.py               # Conversation history CRUD
+  user_settings.py              # Per-user settings CRUD
+  free_uses.py / oauth_state.py # Free-use counters, OAuth token state
+  pipelines/                    # audio.py, text.py, youtube.py — processing pipelines
+  services/rate_limiter.py      # Rate limit checking
+infrastructure/
+  database/                     # SQLAlchemy models, Database class, repo layer (user/conv/oauth)
+  external_api/                 # LLM client + operations, Groq STT, YouTube, Yandex OAuth
+  storage/                      # Obsidian (local/WebDAV) and Google Docs
+interfaces/telegram/handlers/   # aiogram Routers: commands, diagnostics, messages,
+                                #   youtube callbacks, settings + settings_ui/oauth
 locales/
   en.json                       # English translations
   ru.json                       # Russian translations
