@@ -42,6 +42,10 @@ _SUBMENU_KEYS = {
 class SettingsStates(StatesGroup):
     waiting_for_value = State()
 
+    @classmethod
+    def all_states(cls) -> list[State]:
+        return [cls.waiting_for_value]
+
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
