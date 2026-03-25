@@ -48,6 +48,15 @@ pip install pre-commit
 pre-commit install
 ```
 
+### LLM Skills Setup
+
+Set up symlinks for AI assistant skills (Claude Code, Qwen Code):
+
+```bash
+ln -s $(pwd)/skills .claude/skills
+ln -s $(pwd)/skills .qwen/skills
+```
+
 ## Bot commands
 
 | Command    | Description                                            |
@@ -255,3 +264,46 @@ Splits a file and sends each chunk to the bot directly via Telegram API. Useful 
 ```bash
 python tools/send_chunks.py big_recording.webm 123456789
 ```
+
+---
+
+## Mini App (Web Settings UI)
+
+The bot includes a web-based settings UI accessible as a Telegram Mini App.
+
+### Quick Setup (5 minutes)
+
+1. **Build frontend**:
+   ```bash
+   cd webapp && npm install && npm run build
+   ```
+
+2. **Setup HTTPS** with Cloudflare Tunnel (free SSL):
+   - See [docs/MINIAPP-HTTPS-CHECKLIST.md](docs/MINIAPP-HTTPS-CHECKLIST.md)
+   - Or full guide: [docs/cloudflare-tunnel-setup.md](docs/cloudflare-tunnel-setup.md)
+
+3. **Set Mini App URL** in bot:
+   ```
+   /setmenu https://miniapp.yourdomain.com
+   ```
+
+4. **Open bot** → Click "Settings" button in menu
+
+### Features
+
+- Configure LLM API credentials
+- Yandex.Disk OAuth integration
+- Obsidian vault settings
+- Real-time connection status
+
+### Development
+
+```bash
+# Run backend API
+python app_runner.py
+
+# Run frontend dev server
+cd webapp && npm run dev
+```
+
+See [docs/miniapp-implementation-plan.md](docs/miniapp-implementation-plan.md) for architecture details.

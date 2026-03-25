@@ -95,3 +95,8 @@ See [PROJECT.md](docs/ai-context/PROJECT.md) for: configuration (.env), setup, r
 
 - **Docs naming**: All markdown files in `docs/` use `kebab-case.md` (e.g. `refactor-plan.md`, not `REFACTOR_PLAN.md`). Exception: `docs/ai-context/PROJECT.md` (well-known root-level name).
 - **Dual config files**: Project-wide conventions and rules must be added to both `CLAUDE.md` and `QWEN.md` to keep them in sync.
+
+## Skills
+
+- **Skill recognition**: When user types a `/` command (e.g., `/commit-name`), immediately invoke the `skill` tool with the command name (without the `/`). Do NOT execute the command manually.
+- Available skills are in `skills/` directory, symlinked to `.qwen/skills` and `.claude/skills`.

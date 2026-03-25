@@ -18,6 +18,7 @@ from application.state import initialize_state, shutdown_state
 from infrastructure.storage.gdocs import gdocs_service
 from interfaces.telegram.handlers.commands import router as commands_router
 from interfaces.telegram.handlers.diagnostics import router as diagnostics_router
+from interfaces.telegram.handlers.menu_button import router as menu_button_router
 from interfaces.telegram.handlers.messages import router as messages_router
 from interfaces.telegram.handlers.oauth_callback import router as oauth_callback_router
 from interfaces.telegram.handlers.settings import router as settings_router
@@ -48,6 +49,7 @@ dp.include_routers(
     oauth_callback_router,
     commands_router,
     diagnostics_router,
+    menu_button_router,
     youtube_callbacks_router,
     messages_router,
 )

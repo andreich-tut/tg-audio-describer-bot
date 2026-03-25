@@ -30,6 +30,8 @@ update.sh
 .git/
 .vscode/
 .idea/
+.qwen/
+.claude/
 logs/
 tests/
 test/
