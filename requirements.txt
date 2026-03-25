@@ -1,4 +1,5 @@
 aiogram>=3.10,<4
+aiohttp-socks>=0.10
 python-dotenv>=1.0
 httpx[socks]>=0.27
 openai>=1.0
