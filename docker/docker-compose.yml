@@ -20,9 +20,6 @@ services:
       - ../.env
     cap_add:
       - NET_ADMIN
-      - SYS_MODULE
-    devices:
-      - /dev/net/tun
 
   api:
     build:

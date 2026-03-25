@@ -39,7 +39,7 @@ if ! warp-cli --accept-tos registration show 2>/dev/null | grep -q "Account"; th
 fi
 
 echo "Setting Warp mode and connecting..."
-warp-cli --accept-tos mode warp
+warp-cli --accept-tos mode proxy
 warp-cli --accept-tos connect
 
 echo "Waiting for Warp to connect..."
@@ -54,5 +54,8 @@ until warp-cli --accept-tos status 2>/dev/null | grep -q "Connected"; do
   fi
 done
 echo "Warp connected."
+
+export HTTP_PROXY="socks5://127.0.0.1:40000"
+export HTTPS_PROXY="socks5://127.0.0.1:40000"
 
 exec python3 bot.py
