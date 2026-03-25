@@ -7,6 +7,7 @@ import asyncio
 import logging
 import time
 
+import httpx
 import openai
 
 from application.state import add_to_history, get_history, get_user_setting_async
@@ -19,6 +20,7 @@ from shared.config import (
     NOTE_PROMPT,
     SUMMARY_PROMPTS,
     SYSTEM_PROMPT,
+    WARP_PROXY,
 )
 from shared.i18n import t
 
@@ -34,6 +36,7 @@ _default_client = openai.AsyncOpenAI(
     api_key=LLM_API_KEY,
     base_url=LLM_BASE_URL,
     default_headers=_DEFAULT_HEADERS,
+    http_client=httpx.AsyncClient(proxy=WARP_PROXY if WARP_PROXY else None) if WARP_PROXY else None,
 )
 
 # Cache of per-credential clients
@@ -56,6 +59,7 @@ async def _get_client(user_id: int = 0) -> openai.AsyncOpenAI:
             api_key=api_key,
             base_url=base_url,
             default_headers=_DEFAULT_HEADERS,
+            http_client=httpx.AsyncClient(proxy=WARP_PROXY if WARP_PROXY else None) if WARP_PROXY else None,
         )
     return _clients[cache_key]
 

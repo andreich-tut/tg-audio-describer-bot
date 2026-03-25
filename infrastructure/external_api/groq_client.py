@@ -12,7 +12,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from shared.config import GROQ_API_KEY, WHISPER_BACKEND, WHISPER_DEVICE, WHISPER_MODEL
+from shared.config import GROQ_API_KEY, WARP_PROXY, WHISPER_BACKEND, WHISPER_DEVICE, WHISPER_MODEL
 
 # Make tools/ importable
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "tools"))
@@ -55,7 +55,7 @@ async def _transcribe_groq(file_path: str) -> str:
     from application.state import update_groq_limits
 
     logger.info("Calling Groq Whisper API for %s...", file_path)
-    async with httpx.AsyncClient(timeout=120) as client:
+    async with httpx.AsyncClient(timeout=120, proxy=WARP_PROXY if WARP_PROXY else None) as client:
         with open(file_path, "rb") as f:
             response = await client.post(
                 "https://api.groq.com/openai/v1/audio/transcriptions",

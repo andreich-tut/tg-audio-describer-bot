@@ -10,7 +10,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from shared.config import DEFAULT_LANGUAGE, HF_TOKEN, YT_COOKIES_FILE, YT_MAX_DURATION
+from shared.config import DEFAULT_LANGUAGE, HF_TOKEN, WARP_PROXY, YT_COOKIES_FILE, YT_MAX_DURATION
 from shared.i18n import t
 
 logger = logging.getLogger(__name__)
@@ -59,6 +59,7 @@ def _download_yt_sync(url: str, tmp_dir: str, locale: str = DEFAULT_LANGUAGE) ->
         **_common_opts,
         "format": "bestaudio[ext=m4a]/bestaudio/best",
         "outtmpl": outtmpl,
+        "proxy": WARP_PROXY if WARP_PROXY else None,
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",

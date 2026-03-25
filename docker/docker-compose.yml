@@ -13,6 +13,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     volumes:
       - ../data:/app/data
       - ../logs:/app/logs
@@ -20,21 +22,6 @@ services:
       - ../.env
     cap_add:
       - NET_ADMIN
-
-  api:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.api
-    restart: unless-stopped
-    volumes:
-      - ../data:/app/data
-      - ../logs:/app/logs
-    env_file:
-      - ../.env
-    ports:
-      - "8080:8080"
-    depends_on:
-      - bot
 
   caddy:
     image: caddy:2-alpine
@@ -49,7 +36,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - api
+      - bot
       - frontend
 
 volumes:

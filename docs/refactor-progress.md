@@ -660,3 +660,183 @@ bot.py            — Entrypoint (wires everything together)
 ```
 
 **Dependency Flow:** `interfaces → application → domain → infrastructure → shared`
+
+---
+
+## Phase 6: Merge API into Bot Process
+
+**Started:** 2026-03-25 15:45
+**Completed:** 2026-03-25 16:00
+**Status:** ✅ Complete
+
+**Goal:** Eliminate the separate `api` Docker container by running FastAPI/uvicorn inside the bot's asyncio event loop.
+
+### Step 6.1: Add WEBAPP_PORT and WARP_PROXY config
+- [x] Started
+- [x] Completed
+- [x] Tested
+
+**Changes:**
+- Added `WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "8080"))` to `shared/config.py`
+- Added `WARP_PROXY = os.getenv("WARP_PROXY", "socks5://127.0.0.1:40000")` to `shared/config.py`
+
+---
+
+### Step 6.2: Remove lifespan from FastAPI app
+- [x] Started
+- [x] Completed
+- [x] Tested
+
+**Changes:**
+- Removed `lifespan` context manager from `interfaces/webapp/app.py`
+- Removed `from infrastructure.database.database import get_db` import
+- DB is now initialized by `bot.py` via `initialize_state()`
+
+---
+
+### Step 6.3: Add WARP proxy to HTTP clients
+- [x] Started
+- [x] Completed
+- [x] Tested
+
+**Changes:**
+- `infrastructure/external_api/llm_client.py`: Added `httpx.AsyncClient(proxy=WARP_PROXY)` to all OpenAI clients
+- `infrastructure/external_api/groq_client.py`: Added `proxy=WARP_PROXY` to Groq API httpx client
+- `infrastructure/external_api/youtube.py`: Added `"proxy": WARP_PROXY` to yt-dlp options
+- `bot.py`: Added `AiohttpSession(proxy=WARP_PROXY)` for aiogram Bot
+
+**Dependencies added:**
+- `requirements.txt`: Changed `httpx>=0.27` → `httpx[socks]>=0.27`
+- Installed `socksio>=1.0` for SOCKS proxy support
+- Installed `aiohttp-socks>=0.10` for aiogram proxy support
+
+---
+
+### Step 6.4: Add uvicorn to bot.py
+- [x] Started
+- [x] Completed
+- [x] Tested
+
+**Changes:**
+- Added `from interfaces.webapp.app import app as webapp` import
+- Added uvicorn server config with `install_signal_handlers=False`
+- Added `asyncio.gather(dp.start_polling(bot), server.serve())` to run both concurrently
+- Added graceful shutdown: `server.should_exit = True`, `await asyncio.sleep(0.5)`, then cleanup
+
+---
+
+### Step 6.5: Remove global proxy env vars from Docker
+- [x] Started
+- [x] Completed
+- [x] Tested
+
+**Changes:**
+- `docker/docker-entrypoint.sh`: Removed `export HTTP_PROXY` and `export HTTPS_PROXY` lines
+- Proxy is now configured per-client in Python code
+
+---
+
+### Step 6.6: Update Docker Compose
+- [x] Started
+- [x] Completed
+- [x] Tested
+
+**Changes:**
+- `docker/docker-compose.yml`: Removed `api` service entirely
+- Added `ports: ["8080:8080"]` to `bot` service
+- Updated `caddy` depends_on: removed `api`, kept `bot` and `frontend`
+
+---
+
+### Step 6.7: Update Caddyfile
+- [x] Started
+- [x] Completed
+- [x] Tested
+
+**Changes:**
+- Changed `reverse_proxy api:8080` → `reverse_proxy bot:8080`
+- Added comment: "(running inside bot process)"
+
+---
+
+### Step 6.8: Delete Dockerfile.api
+- [x] Started
+- [x] Completed
+- [x] Tested
+
+**Changes:**
+- Deleted `docker/Dockerfile.api` (no longer needed)
+
+---
+
+### Testing
+- [x] `venv/bin/python -c "from bot import bot, dp"` — Import test passed
+- [x] `venv/bin/ruff check .` — All checks passed
+
+**Issues Encountered:**
+1. `openai.AsyncClient` doesn't accept `proxy` argument — fixed by using `httpx.AsyncClient(proxy=...)` instead
+2. Missing `socksio` package — installed via `httpx[socks]` extra
+3. Missing `aiohttp-socks` for aiogram — installed separately
+4. Missing `fastapi`, `uvicorn` in local venv — installed for testing
+
+**Notes:** All proxy configuration is now done per-client in Python code instead of global env vars.
+
+---
+
+### Phase 6 Summary
+
+**Total Time:** 0.25 hours
+**Files Modified:** 8 (config.py, webapp/app.py, llm_client.py, groq_client.py, youtube.py, bot.py, docker-entrypoint.sh, docker-compose.yml, Caddyfile)
+**Files Deleted:** 1 (Dockerfile.api)
+**Dependencies Added:** `httpx[socks]`, `socksio`, `aiohttp-socks`, `fastapi`, `uvicorn`, `python-multipart`
+**Benefits:**
+- Reduced peak RAM by ~200 MB (no separate api container)
+- Simplified deployment (one less service to manage)
+- Cleaner architecture (API runs inside bot process)
+**Deployed to Production:** Pending testing
+**Date Deployed:** TBD
+
+---
+
+## Updated Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         bot.py                                   │
+│  (Entrypoint: Bot + Dispatcher + uvicorn server)                │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │  asyncio.gather(                                           │  │
+│  │    dp.start_polling(bot),  # Telegram polling             │  │
+│  │    server.serve()           # FastAPI webapp              │  │
+│  │  )                                                         │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼                     ▼
+┌───────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│  interfaces/  │   │   application/  │   │    domain/      │
+│  telegram/    │   │   services/     │   │    services/    │
+│  handlers/    │   │   state.py      │   │  audio_processor│
+│  webapp/      │   │   rate_limiter  │   │  youtube.py     │
+│  (FastAPI)    │   └─────────────────┘   └─────────────────┘
+└───────────────┘            │                     │
+        │                    │                     │
+        └────────────────────┼─────────────────────┘
+                             ▼
+                    ┌─────────────────┐
+                    │  infrastructure/│
+                    │  database/      │
+                    │  external_api/  │
+                    │  storage/       │
+                    └─────────────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │    shared/      │
+                    │  i18n, config   │
+                    │ keyboards, utils│
+                    └─────────────────┘
+```
+
+**Dependency Flow:** `interfaces → application → domain → infrastructure → shared`

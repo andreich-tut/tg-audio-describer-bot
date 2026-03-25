@@ -55,7 +55,4 @@ until warp-cli --accept-tos status 2>/dev/null | grep -q "Connected"; do
 done
 echo "Warp connected."
 
-export HTTP_PROXY="socks5://127.0.0.1:40000"
-export HTTPS_PROXY="socks5://127.0.0.1:40000"
-
 exec python3 bot.py

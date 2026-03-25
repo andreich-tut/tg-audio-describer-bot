@@ -10,6 +10,7 @@ Also works with regular text messages.
 import asyncio
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
@@ -21,19 +22,23 @@ from interfaces.telegram.handlers.messages import router as messages_router
 from interfaces.telegram.handlers.oauth_callback import router as oauth_callback_router
 from interfaces.telegram.handlers.settings import router as settings_router
 from interfaces.telegram.handlers.youtube_callbacks import router as youtube_callbacks_router
+from interfaces.webapp.app import app as webapp
 from shared.config import (
     ALLOWED_USER_IDS,
     BOT_TOKEN,
     DEFAULT_LANGUAGE,
     LLM_MODEL,
+    WARP_PROXY,
+    WEBAPP_PORT,
     WHISPER_DEVICE,
     WHISPER_MODEL,
     logger,
 )
 from shared.i18n import t
 
-# Telegram Bot
-bot = Bot(token=BOT_TOKEN)
+# Telegram Bot with WARP proxy
+session = AiohttpSession(proxy=WARP_PROXY if WARP_PROXY else None) if WARP_PROXY else None
+bot = Bot(token=BOT_TOKEN, session=session)
 dp = Dispatcher(storage=MemoryStorage())
 
 # Include routers: settings (FSM) first, oauth deep-link before plain /start,
@@ -115,10 +120,33 @@ async def main():
     except Exception as e:
         logger.warning("Failed to set bot commands: %s", e)
 
+    # Run uvicorn as a concurrent asyncio task with graceful shutdown
+    import uvicorn
+
+    config = uvicorn.Config(
+        webapp,
+        host="0.0.0.0",
+        port=WEBAPP_PORT,
+        log_config=None,  # Inherit bot's rotating file logging
+        install_signal_handlers=False,  # Prevent signal clashes with aiogram
+    )
+    server = uvicorn.Server(config)
+
     try:
-        await dp.start_polling(bot)
+        await asyncio.gather(
+            dp.start_polling(bot),
+            server.serve(),
+        )
+    except asyncio.CancelledError:
+        pass  # Expected on shutdown
     finally:
-        # Cleanup: close database connections
+        # 1. Signal uvicorn to stop accepting requests
+        server.should_exit = True
+
+        # 2. Allow in-flight requests to finish (prevents DB connection errors)
+        await asyncio.sleep(0.5)
+
+        # 3. Clean up bot and DB state last
         await shutdown_state()
         await bot.session.close()
 

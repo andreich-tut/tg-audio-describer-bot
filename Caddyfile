@@ -1,7 +1,7 @@
 {$DOMAIN:localhost} {
-    # Proxy API calls to FastAPI backend
+    # Proxy API calls to FastAPI backend (running inside bot process)
     handle /api/* {
-        reverse_proxy api:8080
+        reverse_proxy bot:8080
     }
 
     # Serve React SPA — all other paths return index.html
