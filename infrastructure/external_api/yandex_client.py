@@ -69,13 +69,8 @@ class YandexToken:
         )
 
 
-def get_oauth_url(state: str, bot_username: str) -> str:
-    """Generate Yandex OAuth authorization URL with Telegram deep link redirect."""
-    # Redirect to Telegram bot with start parameter containing code and state
-    # Format: https://t.me/<bot>?start=oauth_<code>_<state>
-    redirect_uri = f"https://t.me/{bot_username}"
-
-    # URL encode the scope parameter (spaces become + or %20)
+def get_oauth_url(state: str, redirect_uri: str) -> str:
+    """Generate Yandex OAuth authorization URL."""
     from urllib.parse import urlencode
 
     params = {
@@ -88,13 +83,11 @@ def get_oauth_url(state: str, bot_username: str) -> str:
     return f"{YANDEX_AUTH_URL}?{urlencode(params)}"
 
 
-async def exchange_code(code: str, bot_username: str) -> Optional[YandexToken]:
+async def exchange_code(code: str, redirect_uri: str) -> Optional[YandexToken]:
     """Exchange authorization code for tokens."""
     if not YANDEX_OAUTH_CLIENT_ID or not YANDEX_OAUTH_CLIENT_SECRET:
         logger.error("Yandex OAuth credentials not configured")
         return None
-
-    redirect_uri = f"https://t.me/{bot_username}"
 
     async with httpx.AsyncClient(timeout=30) as client:
         try:
@@ -105,7 +98,7 @@ async def exchange_code(code: str, bot_username: str) -> Optional[YandexToken]:
                     "code": code,
                     "client_id": YANDEX_OAUTH_CLIENT_ID,
                     "client_secret": YANDEX_OAUTH_CLIENT_SECRET,
-                    "redirect_uri": redirect_uri,
+                    "redirect_uri": redirect_uri,  # must match the one used in get_oauth_url
                 },
             )
             resp.raise_for_status()

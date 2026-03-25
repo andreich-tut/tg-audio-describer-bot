@@ -40,7 +40,8 @@ async def cb_oauth_login(callback: CallbackQuery, state: FSMContext):
         await callback.answer(t("settings.oauth.not_configured", locale), show_alert=True)
         return
 
-    oauth_url = get_oauth_url(state_value, bot_username)
+    redirect_uri = f"https://t.me/{bot_username}"
+    oauth_url = get_oauth_url(state_value, redirect_uri)
 
     await callback.answer()
     if callback.message:

@@ -48,12 +48,14 @@ async def save_to_gdocs(user_id: int, username: str | None, text: str) -> None:
     try:
 
         def _append():
-            doc = gdocs_service.documents().get(documentId=GDOCS_DOCUMENT_ID).execute()  # type: ignore[union-attr]
+            if not gdocs_service or not GDOCS_DOCUMENT_ID:
+                return
+            doc = gdocs_service.documents().get(documentId=GDOCS_DOCUMENT_ID).execute()
             end_index = doc["body"]["content"][-1]["endIndex"] - 1
             gdocs_service.documents().batchUpdate(
                 documentId=GDOCS_DOCUMENT_ID,
                 body={"requests": [{"insertText": {"location": {"index": end_index}, "text": entry}}]},
-            ).execute()  # type: ignore[union-attr]
+            ).execute()
 
         await asyncio.wait_for(loop.run_in_executor(None, _append), timeout=15.0)
         logger.info("Saved transcription to Google Docs for user %d", user_id)

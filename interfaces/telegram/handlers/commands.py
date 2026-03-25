@@ -103,6 +103,9 @@ async def handle_mode_callback(callback: CallbackQuery):
     if not from_user:
         await callback.answer()
         return
+    if not callback.data:
+        await callback.answer()
+        return
     new_mode = callback.data.split(":", 1)[1]
     mode_labels = get_mode_labels(locale)
     if new_mode not in mode_labels:

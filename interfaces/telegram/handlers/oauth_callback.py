@@ -75,7 +75,8 @@ async def cmd_start_oauth(message: types.Message, state):
         await state.clear()
         return
 
-    token = await exchange_code(code, bot_username)
+    redirect_uri = f"https://t.me/{bot_username}"
+    token = await exchange_code(code, redirect_uri)
 
     if not token:
         await message.answer(t("settings.oauth.exchange_failed", locale))

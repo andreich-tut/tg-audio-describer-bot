@@ -40,9 +40,10 @@ class SettingsStates(StatesGroup):
 @router.message(Command("settings"))
 async def cmd_settings(message: Message):
     locale = await get_locale_from_message(message)
-    if not is_allowed(message.from_user.id):
+    from_user = message.from_user
+    if not from_user or not is_allowed(from_user.id):
         return
-    logger.info("/settings from user_id=%d", message.from_user.id)
+    logger.info("/settings from user_id=%d", from_user.id)
     await message.answer(t("settings.menu_title", locale), reply_markup=_main_kb(locale))
 
 
@@ -58,20 +59,26 @@ async def cb_settings_back(callback: CallbackQuery, state: FSMContext):
 async def cb_submenu(callback: CallbackQuery):
     locale = await get_locale_from_callback(callback)
     from_user = callback.from_user
-    if not from_user or not callback.message:
+    if not from_user or not callback.message or not callback.data:
         await callback.answer()
         return
     submenu = callback.data.split(":")[1]
     text_fn, kb_fn = _SUBMENU_FNS[submenu]
     await callback.answer()
-    # Always await keyboard function (_yadisk_kb is async, others are sync but awaitable)
-    keyboard = await kb_fn(locale, from_user.id) if submenu == "yadisk" else kb_fn(locale)  # type: ignore[misc]
+    # _yadisk_kb is async, others are sync
+    if submenu == "yadisk":
+        keyboard = await kb_fn(locale, from_user.id)  # pyright: ignore[reportGeneralTypeIssues]
+    else:
+        keyboard = kb_fn(locale)  # pyright: ignore[reportGeneralTypeIssues]
     await callback.message.edit_text(await text_fn(from_user.id, locale), reply_markup=keyboard)  # type: ignore[union-attr]
 
 
 @router.callback_query(F.data.startswith("settings:set:"))
 async def cb_set_value(callback: CallbackQuery, state: FSMContext):
     locale = await get_locale_from_callback(callback)
+    if not callback.data:
+        await callback.answer()
+        return
     key = callback.data.split(":", 2)[2]
     if key not in _KEY_META:
         await callback.answer()
@@ -104,7 +111,11 @@ async def cb_cancel(callback: CallbackQuery, state: FSMContext):
     submenu = data.get("submenu", "llm")
     text_fn, kb_fn = _SUBMENU_FNS[submenu]
     await callback.answer()
-    keyboard = kb_fn(locale)  # type: ignore[misc]
+    # _yadisk_kb is async, others are sync
+    if submenu == "yadisk":
+        keyboard = await kb_fn(locale, from_user.id)  # pyright: ignore[reportGeneralTypeIssues]
+    else:
+        keyboard = kb_fn(locale)  # pyright: ignore[reportGeneralTypeIssues]
     await callback.message.edit_text(await text_fn(from_user.id, locale), reply_markup=keyboard)  # type: ignore[union-attr]
 
 
@@ -112,7 +123,7 @@ async def cb_cancel(callback: CallbackQuery, state: FSMContext):
 async def cb_reset_section(callback: CallbackQuery):
     locale = await get_locale_from_callback(callback)
     from_user = callback.from_user
-    if not from_user or not callback.message:
+    if not from_user or not callback.message or not callback.data:
         await callback.answer()
         return
     submenu = callback.data.split(":", 2)[2]
@@ -128,7 +139,8 @@ async def cb_reset_section(callback: CallbackQuery):
         keyboard = await kb_fn(locale, from_user.id)  # pyright: ignore[reportGeneralTypeIssues]
     else:
         keyboard = kb_fn(locale)  # pyright: ignore[reportGeneralTypeIssues]
-    await callback.message.edit_text(await text_fn(from_user.id, locale), reply_markup=keyboard)  # type: ignore[union-attr]
+    text = await text_fn(from_user.id, locale)
+    await callback.message.edit_text(text, reply_markup=keyboard)  # type: ignore[union-attr]
 
 
 @router.message(StateFilter(SettingsStates.waiting_for_value))
@@ -207,8 +219,9 @@ async def handle_setting_value(message: Message, bot: Bot, state: FSMContext):
             keyboard = await kb_fn(locale, from_user.id)  # pyright: ignore[reportGeneralTypeIssues]
         else:
             keyboard = kb_fn(locale)  # pyright: ignore[reportGeneralTypeIssues]
+        text = await text_fn(from_user.id, locale)
         await bot.edit_message_text(
-            await text_fn(from_user.id, locale),
+            text,
             chat_id=message.chat.id,
             message_id=msg_id,  # type: ignore[arg-type]
             reply_markup=keyboard,  # pyright: ignore[reportArgumentType]

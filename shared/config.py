@@ -83,6 +83,11 @@ YANDEX_OAUTH_CLIENT_ID = os.getenv("YANDEX_OAUTH_CLIENT_ID", "")
 YANDEX_OAUTH_CLIENT_SECRET = os.getenv("YANDEX_OAUTH_CLIENT_SECRET", "")
 
 # ──────────────────────────────────────────────
+# Mini App / Web
+# ──────────────────────────────────────────────
+DOMAIN = os.getenv("DOMAIN", "")
+
+# ──────────────────────────────────────────────
 # YouTube
 # ──────────────────────────────────────────────
 YT_MAX_DURATION = int(os.getenv("YT_MAX_DURATION", "7200"))

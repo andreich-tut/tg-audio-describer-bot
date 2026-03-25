@@ -23,6 +23,8 @@ async def handle_voice(message: types.Message, bot: Bot):
     from_user = message.from_user
     if not from_user or not is_allowed(from_user.id):
         return
+    if not message.voice or not message.voice.file_id:
+        return
     await run_as_cancellable(from_user.id, process_audio(message, bot, message.voice.file_id, ".ogg"))
 
 
@@ -33,7 +35,9 @@ async def handle_audio(message: types.Message, bot: Bot):
     if not from_user or not is_allowed(from_user.id):
         return
     audio = message.audio
-    suffix = audio_suffix(audio.mime_type or "", audio.file_name)
+    if not audio or not audio.file_id:
+        return
+    suffix = audio_suffix(audio.mime_type or "", audio.file_name or "")
     await run_as_cancellable(from_user.id, process_audio(message, bot, audio.file_id, suffix))
 
 
@@ -42,6 +46,8 @@ async def handle_video_note(message: types.Message, bot: Bot):
     """Process video notes (round video messages, typically .mp4)."""
     from_user = message.from_user
     if not from_user or not is_allowed(from_user.id):
+        return
+    if not message.video_note or not message.video_note.file_id:
         return
     await run_as_cancellable(from_user.id, process_audio(message, bot, message.video_note.file_id, ".mp4"))
 
@@ -54,11 +60,13 @@ async def handle_document(message: types.Message, bot: Bot):
     if not from_user or not is_allowed(from_user.id):
         return
     doc = message.document
+    if not doc or not doc.file_id:
+        return
     mime = doc.mime_type or ""
     if not any(t in mime for t in ("audio", "video", "ogg", "webm", "mp4", "mp3", "m4a", "aac", "flac", "wav")):
         await message.answer(t("messages.unsupported_file", locale))
         return
-    suffix = audio_suffix(mime, doc.file_name)
+    suffix = audio_suffix(mime, doc.file_name or "")
     await run_as_cancellable(from_user.id, process_audio(message, bot, doc.file_id, suffix))
 
 
@@ -69,6 +77,8 @@ async def handle_video(message: types.Message, bot: Bot):
     if not from_user or not is_allowed(from_user.id):
         return
     video = message.video
+    if not video or not video.file_id:
+        return
     mime = video.mime_type or ""
     if "webm" in mime:
         suffix = ".webm"

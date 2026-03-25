@@ -76,7 +76,11 @@ def transcribe_file(
     Run whisperX pipeline on a single file.
     Returns list of segments: {start, end, speaker, text}
     """
-    import whisperx
+    try:
+        import whisperx  # pyright: ignore[reportMissingImports]
+    except ImportError:
+        logging.getLogger(__name__).error("whisperx is not installed. Install with: pip install whisperx")
+        sys.exit(1)
 
     logger = logging.getLogger(__name__)
     compute_type = "float16" if WHISPER_DEVICE == "cuda" else "int8"
@@ -101,12 +105,20 @@ def transcribe_file(
     # Free GPU memory
     import gc
 
-    import torch
+    try:
+        import torch  # pyright: ignore[reportMissingImports]
+    except ImportError:
+        logger.warning("torch is not installed. GPU memory may not be freed properly.")
 
     del model
     gc.collect()
     if WHISPER_DEVICE == "cuda":
-        torch.cuda.empty_cache()
+        try:
+            import torch  # pyright: ignore[reportMissingImports]
+
+            torch.cuda.empty_cache()
+        except ImportError:
+            pass
 
     if not result["segments"]:
         logger.warning("No speech detected in %s", file_path)

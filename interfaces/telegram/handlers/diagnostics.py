@@ -101,7 +101,7 @@ async def cmd_lang(message: types.Message):
 async def handle_lang_callback(callback: CallbackQuery):
     locale = await get_locale_from_callback(callback)
     from_user = callback.from_user
-    if not from_user or not callback.message:
+    if not from_user or not callback.message or not callback.data:
         await callback.answer()
         return
     new_lang = callback.data.split(":", 1)[1]

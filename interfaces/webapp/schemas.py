@@ -36,11 +36,6 @@ class SectionId(str, Enum):
     obsidian = "obsidian"
 
 
-class OAuthExchangeRequest(BaseModel):
-    code: str
-    state: str | None = None
-
-
 # Keys that are privileged and only accessible to ALLOWED_USER_IDS
 PRIVILEGED_KEYS: set[str] = {"obsidian_vault_path"}
 

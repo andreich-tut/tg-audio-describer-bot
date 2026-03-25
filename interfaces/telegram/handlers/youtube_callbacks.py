@@ -6,7 +6,7 @@ import time
 
 from aiogram import F, Router
 from aiogram.enums import ParseMode
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 from application.state import yt_transcripts
 from infrastructure.external_api.llm_client import summarize_ollama
@@ -29,6 +29,8 @@ async def handle_yt_summary_callback(callback: CallbackQuery):
     logger.info("YT callback: user_id=%d, data=%s", from_user.id, callback.data)
     await callback.answer()
 
+    if not callback.data:
+        return
     parts = callback.data.split(":")
     if len(parts) != 3:
         return
@@ -40,11 +42,11 @@ async def handle_yt_summary_callback(callback: CallbackQuery):
 
     entry = yt_transcripts.get(cache_key)
     if not entry:
-        if callback.message:
+        if callback.message and isinstance(callback.message, Message):
             await callback.message.edit_text(t("callbacks.youtube.expired", locale))  # type: ignore[union-attr]
         return
 
-    if callback.message:
+    if callback.message and isinstance(callback.message, Message):
         await callback.message.edit_text(t("callbacks.youtube.generate", locale), reply_markup=None)  # type: ignore[union-attr]
 
     try:
@@ -56,9 +58,10 @@ async def handle_yt_summary_callback(callback: CallbackQuery):
         header = t("pipelines.youtube.summary_format_header", locale, label=label)
         full_msg = header + summary
 
+        if not callback.message or not isinstance(callback.message, Message):
+            return
         if len(full_msg) > 4000:
-            if callback.message:
-                await callback.message.edit_text(header, parse_mode=ParseMode.MARKDOWN)  # type: ignore[union-attr]
+            await callback.message.edit_text(header, parse_mode=ParseMode.MARKDOWN)
             for i in range(0, len(summary), 4000):
                 await callback.message.answer(summary[i : i + 4000])
             await callback.message.answer(
@@ -66,19 +69,19 @@ async def handle_yt_summary_callback(callback: CallbackQuery):
                 reply_markup=yt_summary_keyboard(cache_key, locale),
             )
         else:
-            if callback.message:
-                await callback.message.edit_text(  # type: ignore[union-attr]
-                    full_msg,
-                    parse_mode=ParseMode.MARKDOWN,
-                    reply_markup=yt_summary_keyboard(cache_key, locale),
-                )
+            await callback.message.edit_text(
+                full_msg,
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=yt_summary_keyboard(cache_key, locale),
+            )
 
         entry["ts"] = time.time()  # refresh TTL
 
     except Exception as e:
         logger.exception("YouTube summary callback error")
-        if callback.message:
-            await callback.message.edit_text(  # type: ignore[union-attr]
-                t("callbacks.youtube.error", locale, error=str(e)),
-                reply_markup=yt_summary_keyboard(cache_key, locale),
-            )
+        if not callback.message or not isinstance(callback.message, Message):
+            return
+        await callback.message.edit_text(
+            t("callbacks.youtube.error", locale, error=str(e)),
+            reply_markup=yt_summary_keyboard(cache_key, locale),
+        )

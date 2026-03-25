@@ -22,12 +22,6 @@ export const settingsApi = {
 
   getYandexOAuthUrl: () => api<{ url: string; state: string }>('/api/v1/oauth/yandex/url'),
 
-  exchangeYandexCode: (code: string, state?: string) =>
-    api<{ connected: boolean; login: string | null }>('/api/v1/oauth/yandex/exchange', {
-      method: 'POST',
-      body: JSON.stringify({ code, state }),
-    }),
-
   disconnectYandex: () =>
     api<{ disconnected: boolean }>('/api/v1/oauth/yandex', {
       method: 'DELETE',
