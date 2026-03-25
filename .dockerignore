@@ -1,5 +1,6 @@
 venv/
 .venv/
+webapp/node_modules/
 __pycache__/
 *.pyc
 *.pyo

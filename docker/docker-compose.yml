@@ -1,4 +1,13 @@
 services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    volumes:
+      - webapp_dist:/srv/webapp
+    command: ["sh", "-c", "cp -r /dist/. /srv/webapp/ && echo 'Frontend assets copied.'"]
+    restart: "no"
+
   bot:
     build:
       context: ..
@@ -39,12 +48,14 @@ services:
       - "443:443/udp"
     volumes:
       - ../Caddyfile:/etc/caddy/Caddyfile
-      - ../webapp/dist:/srv/webapp
+      - webapp_dist:/srv/webapp
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
       - api
+      - frontend
 
 volumes:
   caddy_data:
   caddy_config:
+  webapp_dist:
