@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # Load local model only when needed
 _whisper = None
 if WHISPER_BACKEND == "local":
-    from faster_whisper import WhisperModel
+    from faster_whisper import WhisperModel  # pyright: ignore[reportMissingImports]
 
     logger.info("Loading Whisper model '%s' on %s...", WHISPER_MODEL, WHISPER_DEVICE)
     _whisper = WhisperModel(WHISPER_MODEL, device=WHISPER_DEVICE, compute_type="int8")

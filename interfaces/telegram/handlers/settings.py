@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
-from application.state import clear_user_settings_section, set_user_setting
+from application.state import clear_user_settings_section_async, set_user_setting_async
 from interfaces.telegram.handlers.settings_oauth import router as _oauth_router
 from interfaces.telegram.handlers.settings_ui import (
     _KEY_META,
@@ -130,7 +130,7 @@ async def cb_reset_section(callback: CallbackQuery):
     if submenu not in _SUBMENU_KEYS:
         await callback.answer()
         return
-    await clear_user_settings_section(from_user.id, _SUBMENU_KEYS[submenu])
+    await clear_user_settings_section_async(from_user.id, _SUBMENU_KEYS[submenu])
     logger.info("Settings reset: user_id=%d, section=%s", from_user.id, submenu)
     await callback.answer(t("settings.settings_reset", locale, section=submenu))
     text_fn, kb_fn = _SUBMENU_FNS[submenu]
@@ -207,7 +207,7 @@ async def handle_setting_value(message: Message, bot: Bot, state: FSMContext):
         await message.answer(t("settings.value_too_long", locale, max=500))
         return
 
-    await set_user_setting(from_user.id, key, value)
+    await set_user_setting_async(from_user.id, key, value)
     label_key, _ = _KEY_META[key]
     label = t(label_key, locale)
     logger.info("Setting saved: user_id=%d, key=%s", from_user.id, key)

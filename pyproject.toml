@@ -1,6 +1,6 @@
 [project]
 name = "tg-audio-describer-bot"
-version = "0.1.120"
+version = "0.1.121"
 
 [tool.ruff]
 line-length = 120
