@@ -36,7 +36,7 @@ repos:
 
       - id: bot-import-check
         name: Bot import check
-        entry: bash -c './venv/bin/python3 -c "from bot import main; import shared.i18n; import shared.utils; import interfaces.telegram.handlers"'
+        entry: bash -c './.venv/bin/python3 -c "from bot import main; import shared.i18n; import shared.utils; import interfaces.telegram.handlers"'
         language: system
         files: \.py$
         pass_filenames: false

@@ -1,6 +1,6 @@
 [project]
-name = "tg-voice"
-version = "0.1.117"
+name = "tg-audio-describer-bot"
+version = "0.1.119"
 
 [tool.ruff]
 line-length = 120
@@ -17,9 +17,9 @@ ignore = ["E501"]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 include = ["bot.py", "app_runner.py", "application", "infrastructure", "interfaces", "shared"]
-exclude = ["**/__pycache__", "venv"]
+exclude = ["**/__pycache__", ".venv"]
 venvPath = "."
-venv = "venv"
+venv = ".venv"
 
 # Suppress non-critical type warnings for third-party libraries and aiogram optional types
 reportOptionalMemberAccess = "warning"
