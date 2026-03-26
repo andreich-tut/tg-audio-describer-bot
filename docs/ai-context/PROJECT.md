@@ -7,9 +7,11 @@ Shared project context for AI coding assistants. Referenced by CLAUDE.md and QWE
 **Telegram Voice/Audio Bot**: A Telegram bot that processes voice messages, audio files, and YouTube links via Whisper STT and generates responses using any OpenAI-compatible LLM API (default: OpenRouter).
 
 - **Stack**: Python 3.11+, aiogram 3, faster-whisper (local) or Groq (cloud) for STT, OpenAI SDK for LLM
-- **Architecture**: Async event-driven (asyncio), SQLite database with encryption for persistence, Docker deployment with Cloudflare WARP
+- **Architecture**: Async event-driven (asyncio), SQLite database with encryption for persistence, Docker deployment with Cloudflare WARP, Redis for pub/sub and caching
 - **Language**: Bilingual UI (Russian/English), per-user language setting
-- **Persistence**: SQLite database (`data/bot.db`) with Fernet-encrypted sensitive data (OAuth tokens, API keys)
+- **Persistence**: 
+  - SQLite database (`data/bot.db`) with Fernet-encrypted sensitive data (OAuth tokens, API keys)
+  - Redis (AOF persistence) for pub/sub messaging and real-time updates
 
 ## Architecture & Key Concepts
 
@@ -59,6 +61,7 @@ infrastructure/
     llm_operations.py — High-level LLM ops: ask_ollama(), summarize_ollama(), format_note_ollama()
     youtube.py      — YouTube audio download (yt-dlp), optional whisperX diarization
     yandex_client.py — Yandex OAuth 2.0 flow for Yandex.Disk access
+  redis_client.py   — Redis connection singleton with retry logic, pub/sub for SSE
   storage/
     obsidian.py     — Obsidian note saving: local vault or Yandex.Disk WebDAV (OAuth)
     gdocs.py        — Google Docs integration (optional)
@@ -141,6 +144,11 @@ DEFAULT_LANGUAGE=ru
 # Database Encryption (REQUIRED for production)
 ENCRYPTION_KEY=                   # Generate: python -c "from infrastructure.database.encryption import generate_key; print(generate_key())"
                                   # If not set, auto-generated and stored in data/master.key
+
+# Redis (REQUIRED for TMA real-time updates)
+REDIS_URL=redis://localhost:6379/0  # Docker default: redis://redis:6379/0
+                                    # Format: redis://[host]:[port]/[db]
+                                    # Used for: OAuth SSE pub/sub, future caching
 ```
 
 ## Development & Running
@@ -258,3 +266,5 @@ Default set via `DEFAULT_LANGUAGE=ru` in `.env`. Users can switch per-session wi
 - `aiosqlite>=0.19` — Async SQLite driver
 - `alembic>=1.13` — Database migrations
 - `cryptography>=41.0` — Fernet encryption for sensitive data
+- `redis[hiredis]>=5.0` — Redis client for pub/sub and caching
+- `sse-starlette>=2.0` — Server-Sent Events for real-time OAuth updates

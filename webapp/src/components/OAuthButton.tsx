@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { settingsApi } from '../api/settings'
+import { useOAuthSSE } from '../hooks/useOAuthSSE'
 
 interface OAuthButtonProps {
   connected: boolean
@@ -10,6 +11,15 @@ interface OAuthButtonProps {
 
 export default function OAuthButton({ connected, login, onDisconnect, onRefresh }: OAuthButtonProps) {
   const [loading, setLoading] = useState(false)
+  
+  // Use SSE for real-time OAuth state updates
+  const tg = window.Telegram?.WebApp
+  const initData = tg?.initData || ''
+  const { state: sseState } = useOAuthSSE(initData)
+
+  // Use SSE state if available, otherwise fall back to props
+  const displayConnected = sseState?.connected ?? connected
+  const displayLogin = sseState?.login ?? login
 
   // Re-fetch settings when user returns to the Mini App after OAuth flow
   useEffect(() => {
@@ -43,10 +53,10 @@ export default function OAuthButton({ connected, login, onDisconnect, onRefresh 
 
   return (
     <div className="oauth-row">
-      {connected ? (
+      {displayConnected ? (
         <>
           <span className="field-value-text">
-            {login ? `Connected: ${login}` : 'Connected'}
+            {displayLogin ? `Connected: ${displayLogin}` : 'Connected'}
           </span>
           <button className="btn btn-danger" onClick={handleDisconnect} disabled={loading}>
             {loading ? '...' : 'Disconnect'}

@@ -10,10 +10,12 @@ declare global {
             first_name?: string
             language_code?: string
           }
+          start_param?: string
         }
         ready(): void
         expand(): void
         close(): void
+        showConfirm(message: string, callback: (ok: boolean) => void): void
         colorScheme: 'light' | 'dark'
         themeParams: Record<string, string>
         BackButton: {

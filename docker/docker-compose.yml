@@ -1,4 +1,19 @@
 services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - internal
+
   frontend:
     build:
       context: ..
@@ -7,6 +22,8 @@ services:
       - webapp_dist:/srv/webapp
     command: ["sh", "-c", "cp -r /dist/. /srv/webapp/ && echo 'Frontend assets copied.'"]
     restart: "no"
+    networks:
+      - internal
 
   bot:
     build:
@@ -18,8 +35,15 @@ services:
       - ../logs:/app/logs
     env_file:
       - ../.env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
     cap_add:
       - NET_ADMIN
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
 
   caddy:
     image: caddy:2-alpine
@@ -38,8 +62,15 @@ services:
     depends_on:
       - bot
       - frontend
+    networks:
+      - internal
 
 volumes:
   caddy_data:
   caddy_config:
   webapp_dist:
+  redis-data:
+
+networks:
+  internal:
+    driver: bridge

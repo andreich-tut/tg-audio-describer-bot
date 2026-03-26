@@ -17,6 +17,10 @@
       "lang": "/lang — change language",
       "settings": "/settings — personal API and storage settings"
     },
+    "settings": {
+      "button": "📱 Open Settings",
+      "open_tma": "Open settings in the app:"
+    },
     "lang": {
       "current_language": "Current language: {language}",
       "select_language": "Select language:",
@@ -271,5 +275,46 @@
       "login_failed": "❌ Failed to get Yandex login.",
       "disconnected": "✅ Yandex OAuth disconnected."
     }
+  },
+  "tma": {
+    "tabs": {
+      "notes": "History",
+      "usage": "Usage",
+      "settings": "Settings"
+    },
+    "notes": {
+      "title": "Conversation History",
+      "empty": "No messages yet. Send a voice message or text to the bot to start a conversation.",
+      "clear": "Clear History",
+      "clear_confirm": "Are you sure you want to clear all conversation history?",
+      "cleared": "History cleared",
+      "you": "You",
+      "bot": "Bot",
+      "messages_count": "{count} messages"
+    },
+    "usage": {
+      "title": "Usage & Limits",
+      "models": "Active Models",
+      "llm_model": "LLM Model",
+      "llm_provider": "LLM Provider",
+      "whisper_backend": "Speech-to-Text",
+      "whisper_model": "Whisper Model",
+      "free_uses": "Free Uses",
+      "uses_remaining": "{remaining} of {limit} remaining",
+      "openrouter": "OpenRouter",
+      "openrouter_usage": "Usage: ${usage} / ${limit}",
+      "openrouter_free_tier": "Free tier",
+      "openrouter_paid_tier": "Paid tier",
+      "openrouter_unlimited": "Unlimited",
+      "groq": "Groq",
+      "groq_requests": "Requests: {remaining} / {limit}",
+      "groq_tokens": "Tokens: {remaining} / {limit}",
+      "groq_reset": "Resets: {reset}",
+      "not_configured": "Not configured",
+      "not_available": "Not available",
+      "mode": "Current Mode",
+      "language": "Language"
+    },
+    "edit_and_save": "Edit & Save"
   }
 }

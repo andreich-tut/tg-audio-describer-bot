@@ -8,17 +8,25 @@ Flow:
   4. Yandex redirects to GET /api/v1/oauth/yandex/callback?code=...&state=...
   5. Backend exchanges code, stores token, returns HTML that closes the tab
   6. Frontend detects visibility change → re-fetches /settings → shows connected
+
+SSE for real-time updates:
+  - GET /oauth/events streams OAuth state changes via Redis pub/sub
+  - On successful OAuth, backend publishes to redis channel oauth_updates:{user_id}
 """
 
+import asyncio
+import json
 import logging
 import time
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from sse_starlette.sse import EventSourceResponse
 
 from infrastructure.database.database import Database
 from infrastructure.external_api.yandex_client import exchange_code, get_oauth_url, get_user_login
+from infrastructure.redis_client import get_redis
 from interfaces.webapp.dependencies import get_current_user_id, get_database
 from shared.config import DOMAIN, YANDEX_OAUTH_CLIENT_ID
 
@@ -65,6 +73,49 @@ async def get_yandex_oauth_url(
     return {"url": url, "state": state}
 
 
+@router.get("/oauth/events")
+async def oauth_events(
+    request: Request,
+    user_id: int = Depends(get_current_user_id),
+    db: Database = Depends(get_database),
+):
+    """SSE stream for real-time OAuth state updates."""
+
+    async def event_generator():
+        r = await get_redis()
+        pubsub = r.pubsub()
+        channel = f"oauth_updates:{user_id}"
+        await pubsub.subscribe(channel)
+
+        try:
+            # Initial state push
+            token = await db.get_oauth_token(user_id, "yandex")
+            yield {
+                "event": "oauth_state",
+                "data": json.dumps(
+                    {
+                        "provider": "yandex",
+                        "connected": token is not None,
+                        "login": json.loads(token.token_meta or "{}").get("login") if token else None,
+                    }
+                ),
+            }
+
+            # Listen for updates
+            while True:
+                if await request.is_disconnected():
+                    break
+                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+                if message and message["type"] == "message":
+                    yield {"event": "oauth_state", "data": message["data"]}
+                await asyncio.sleep(0.1)
+        finally:
+            await pubsub.unsubscribe(channel)
+            await pubsub.aclose()
+
+    return EventSourceResponse(event_generator())
+
+
 @router.get("/oauth/yandex/callback", name="yandex_oauth_callback")
 async def yandex_oauth_callback(
     request: Request,
@@ -106,6 +157,13 @@ async def yandex_oauth_callback(
     )
     logger.info("Yandex OAuth connected via callback: user_id=%d login=%s", user_id, login)
 
+    # Publish OAuth success event to Redis for SSE
+    r = await get_redis()
+    await r.publish(
+        f"oauth_updates:{user_id}",
+        json.dumps({"provider": "yandex", "connected": True, "login": login}),
+    )
+
     # Return a page that auto-closes the browser tab
     display = f"Connected as {login}" if login else "Connected successfully"
     html = f"""<!DOCTYPE html>
@@ -125,4 +183,12 @@ async def disconnect_yandex(
 ) -> dict:
     await db.delete_oauth_token(user_id, "yandex")
     logger.info("Yandex OAuth disconnected: user_id=%d", user_id)
+
+    # Publish OAuth disconnect event to Redis for SSE
+    r = await get_redis()
+    await r.publish(
+        f"oauth_updates:{user_id}",
+        json.dumps({"provider": "yandex", "connected": False, "login": None}),
+    )
+
     return {"disconnected": True}

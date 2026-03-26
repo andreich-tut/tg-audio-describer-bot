@@ -16,6 +16,7 @@ from application.state import (
     user_gdocs,
     user_modes,
 )
+from infrastructure.database.database import get_db
 from infrastructure.storage.gdocs import gdocs_service
 from shared.config import (
     GDOCS_DOCUMENT_ID,
@@ -145,14 +146,38 @@ async def handle_cancel_callback(callback: CallbackQuery):
 
 @router.message(Command("clear"))
 async def cmd_clear(message: types.Message):
+    """Clear conversation history and delete bot messages from last 48h."""
+    import asyncio
+
     locale = await get_locale_from_message(message)
     from_user = message.from_user
     if not from_user:
         return
     if not is_allowed(from_user.id):
         return
+
+    # 1. Clear conversation history (existing logic)
     logger.info("/clear from user_id=%d, history_size=%d", from_user.id, len(get_history(from_user.id)))
     clear_history(from_user.id)
+
+    # 2. Delete tracked bot messages from Telegram (batch of 25, 1s sleep)
+    db = get_db()
+    messages_to_delete = await db.get_deletable_messages(from_user.id, message.chat.id)
+
+    deleted = 0
+    failed = 0
+    for i in range(0, len(messages_to_delete), 25):
+        batch = messages_to_delete[i : i + 25]
+        for msg in batch:
+            try:
+                await message.bot.delete_message(chat_id=msg.chat_id, message_id=msg.message_id)
+                deleted += 1
+            except Exception:
+                failed += 1  # Message already deleted or >48h
+        if i + 25 < len(messages_to_delete):
+            await asyncio.sleep(1)  # Rate limit: 25 deletions per second
+
+    logger.info("/clear user_id=%d deleted=%d failed=%d", from_user.id, deleted, failed)
     await message.answer(t("commands.clear.history_cleared", locale))
 
 

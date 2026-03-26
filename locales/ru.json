@@ -17,6 +17,10 @@
       "lang": "/lang — изменить язык",
       "settings": "/settings — личные настройки API и хранилища"
     },
+    "settings": {
+      "button": "📱 Открыть настройки",
+      "open_tma": "Откройте настройки в приложении:"
+    },
     "lang": {
       "current_language": "Текущий язык: {language}",
       "select_language": "Выберите язык:",
@@ -276,5 +280,46 @@
       "login_failed": "❌ Не удалось получить логин Яндекса.",
       "disconnected": "✅ Яндекс OAuth отключён."
     }
+  },
+  "tma": {
+    "tabs": {
+      "notes": "История",
+      "usage": "Лимиты",
+      "settings": "Настройки"
+    },
+    "notes": {
+      "title": "История разговора",
+      "empty": "Пока нет сообщений. Отправьте голосовое или текстовое сообщение боту.",
+      "clear": "Очистить историю",
+      "clear_confirm": "Вы уверены, что хотите очистить историю разговора?",
+      "cleared": "История очищена",
+      "you": "Вы",
+      "bot": "Бот",
+      "messages_count": "{count} сообщений"
+    },
+    "usage": {
+      "title": "Использование и лимиты",
+      "models": "Активные модели",
+      "llm_model": "Модель LLM",
+      "llm_provider": "Провайдер LLM",
+      "whisper_backend": "Распознавание речи",
+      "whisper_model": "Модель Whisper",
+      "free_uses": "Бесплатные запросы",
+      "uses_remaining": "Осталось {remaining} из {limit}",
+      "openrouter": "OpenRouter",
+      "openrouter_usage": "Использовано: ${usage} / ${limit}",
+      "openrouter_free_tier": "Бесплатный тариф",
+      "openrouter_paid_tier": "Платный тариф",
+      "openrouter_unlimited": "Без ограничений",
+      "groq": "Groq",
+      "groq_requests": "Запросы: {remaining} / {limit}",
+      "groq_tokens": "Токены: {remaining} / {limit}",
+      "groq_reset": "Сброс: {reset}",
+      "not_configured": "Не настроено",
+      "not_available": "Недоступно",
+      "mode": "Текущий режим",
+      "language": "Язык"
+    },
+    "edit_and_save": "Редактировать"
   }
 }

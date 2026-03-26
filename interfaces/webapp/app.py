@@ -7,7 +7,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from interfaces.webapp.routes import oauth, settings
+from interfaces.webapp.routes import conversation, oauth, settings, usage
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,8 @@ def create_app() -> FastAPI:
 
     app.include_router(settings.router, prefix="/api/v1")
     app.include_router(oauth.router, prefix="/api/v1")
+    app.include_router(conversation.router, prefix="/api/v1", tags=["conversation"])
+    app.include_router(usage.router, prefix="/api/v1", tags=["usage"])
 
     return app
 

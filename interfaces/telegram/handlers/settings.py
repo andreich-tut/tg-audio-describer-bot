@@ -1,5 +1,6 @@
 """
 /settings command + FSM handlers for per-user API credentials and storage config.
+Also serves as TMA entry point.
 """
 
 from urllib.parse import urlparse
@@ -8,7 +9,7 @@ from aiogram import Bot, F, Router
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 
 from application.state import clear_user_settings_section_async, set_user_setting_async
 from interfaces.telegram.handlers.settings_oauth import router as _oauth_router
@@ -21,7 +22,7 @@ from interfaces.telegram.handlers.settings_ui import (
     _cancel_kb,
     _main_kb,
 )
-from shared.config import ALLOWED_USER_IDS, is_allowed, logger
+from shared.config import ALLOWED_USER_IDS, WEBAPP_URL, is_allowed, logger
 from shared.i18n import t
 from shared.utils import get_locale_from_callback, get_locale_from_message
 
@@ -39,12 +40,32 @@ class SettingsStates(StatesGroup):
 
 @router.message(Command("settings"))
 async def cmd_settings(message: Message):
+    """Open TMA settings app via WebApp."""
     locale = await get_locale_from_message(message)
     from_user = message.from_user
     if not from_user or not is_allowed(from_user.id):
         return
     logger.info("/settings from user_id=%d", from_user.id)
-    await message.answer(t("settings.menu_title", locale), reply_markup=_main_kb(locale))
+
+    # Open TMA instead of inline menu
+    if not WEBAPP_URL:
+        # Fallback to inline menu if WEBAPP_URL not configured
+        await message.answer(t("settings.menu_title", locale), reply_markup=_main_kb(locale))
+        return
+
+    await message.answer(
+        t("settings.menu_title", locale),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=t("commands.settings.button", locale),
+                        web_app=WebAppInfo(url=f"{WEBAPP_URL}?startapp=settings"),
+                    )
+                ]
+            ]
+        ),
+    )
 
 
 @router.callback_query(F.data == "settings:back")

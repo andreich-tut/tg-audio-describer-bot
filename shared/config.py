@@ -86,6 +86,8 @@ YANDEX_OAUTH_CLIENT_SECRET = os.getenv("YANDEX_OAUTH_CLIENT_SECRET", "")
 # Mini App / Web
 # ──────────────────────────────────────────────
 DOMAIN = os.getenv("DOMAIN", "")
+WEBAPP_URL = os.getenv("WEBAPP_URL", "")  # Public URL for TMA deep links
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # ──────────────────────────────────────────────
 # YouTube

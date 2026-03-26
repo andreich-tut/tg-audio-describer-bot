@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     DateTime,
     ForeignKey,
@@ -59,6 +60,9 @@ class User(Base):
     )
     free_use: Mapped[Optional["FreeUse"]] = relationship(
         "FreeUse", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+    bot_messages: Mapped[list["BotMessage"]] = relationship(
+        "BotMessage", back_populates="user", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -169,3 +173,24 @@ class FreeUse(Base):
 
     def __repr__(self) -> str:
         return f"<FreeUse(user_id={self.user_id}, count={self.count})>"
+
+
+class BotMessage(Base):
+    """Tracks bot/user message IDs for 48h deletion window."""
+
+    __tablename__ = "bot_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), index=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger)
+    message_id: Mapped[int] = mapped_column(BigInteger)
+    direction: Mapped[str] = mapped_column(String(4))  # "in" or "out"
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="bot_messages")
+
+    __table_args__ = (Index("idx_bot_messages_user_created", "user_id", "created_at"),)
+
+    def __repr__(self) -> str:
+        return f"<BotMessage(user_id={self.user_id}, message_id={self.message_id}, direction={self.direction})>"

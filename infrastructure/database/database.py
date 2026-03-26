@@ -24,6 +24,7 @@ class Database:
         self.engine = create_async_engine(db_url, echo=False, future=True, pool_pre_ping=True)
         self.async_session_maker = async_sessionmaker(self.engine, class_=AsyncSession, expire_on_commit=False)
 
+        from infrastructure.database.bot_message_repo import BotMessageRepo
         from infrastructure.database.conversation_repo import ConversationRepo
         from infrastructure.database.oauth_repo import OAuthRepo
         from infrastructure.database.user_repo import UserRepo
@@ -31,6 +32,7 @@ class Database:
         self._users = UserRepo(self.async_session_maker)
         self._conv = ConversationRepo(self.async_session_maker)
         self._oauth = OAuthRepo(self.async_session_maker)
+        self._bot_messages = BotMessageRepo(self.async_session_maker)
 
     async def init_db(self) -> None:
         DB_PATH.parent.mkdir(exist_ok=True)
@@ -68,6 +70,11 @@ class Database:
     set_free_uses = property(lambda self: self._oauth.set_free_uses)
     increment_free_uses = property(lambda self: self._oauth.increment_free_uses)
     migrate_from_json = property(lambda self: self._oauth.migrate_from_json)
+
+    # ── Bot messages ──────────────────────────────────────────────────────────
+    track_message = property(lambda self: self._bot_messages.track)
+    get_deletable_messages = property(lambda self: self._bot_messages.get_deletable)
+    purge_expired_messages = property(lambda self: self._bot_messages.purge_expired)
 
 
 _db: Optional[Database] = None

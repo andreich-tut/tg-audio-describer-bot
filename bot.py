@@ -12,9 +12,10 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import BotCommand
+from aiogram.types import BotCommand, MenuButtonWebApp, WebAppInfo
 
 from application.state import initialize_state, shutdown_state
+from infrastructure.database.database import get_db
 from infrastructure.storage.gdocs import gdocs_service
 from interfaces.telegram.handlers.commands import router as commands_router
 from interfaces.telegram.handlers.diagnostics import router as diagnostics_router
@@ -23,6 +24,7 @@ from interfaces.telegram.handlers.messages import router as messages_router
 from interfaces.telegram.handlers.oauth_callback import router as oauth_callback_router
 from interfaces.telegram.handlers.settings import router as settings_router
 from interfaces.telegram.handlers.youtube_callbacks import router as youtube_callbacks_router
+from interfaces.telegram.middleware.message_tracker import MessageTrackingMiddleware
 from interfaces.webapp.app import app as webapp
 from shared.config import (
     ALLOWED_USER_IDS,
@@ -31,6 +33,7 @@ from shared.config import (
     LLM_MODEL,
     WARP_PROXY,
     WEBAPP_PORT,
+    WEBAPP_URL,
     WHISPER_DEVICE,
     WHISPER_MODEL,
     logger,
@@ -41,6 +44,18 @@ from shared.i18n import t
 session = AiohttpSession(proxy=WARP_PROXY if WARP_PROXY else None) if WARP_PROXY else None
 bot = Bot(token=BOT_TOKEN, session=session)
 dp = Dispatcher(storage=MemoryStorage())
+
+
+async def purge_expired_messages():
+    """Background task: clean up bot_messages older than 48h every hour."""
+    db = get_db()
+    while True:
+        await asyncio.sleep(3600)
+        try:
+            await db.purge_expired_messages()
+        except Exception as e:
+            logger.warning("purge_expired_messages failed: %s", e)
+
 
 # Include routers: settings (FSM) first, oauth deep-link before plain /start,
 # then commands, diagnostics, youtube callbacks, messages (catch-all last)
@@ -53,6 +68,9 @@ dp.include_routers(
     youtube_callbacks_router,
     messages_router,
 )
+
+# Register message tracking middleware (tracks all messages for 48h deletion)
+dp.message.outer_middleware(MessageTrackingMiddleware())
 
 
 async def main():
@@ -122,6 +140,19 @@ async def main():
     except Exception as e:
         logger.warning("Failed to set bot commands: %s", e)
 
+    # Set Mini App menu button if WEBAPP_URL is configured
+    if WEBAPP_URL:
+        try:
+            await bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(
+                    text="Open App",
+                    web_app=WebAppInfo(url=WEBAPP_URL),
+                )
+            )
+            logger.info("Mini App menu button set to: %s", WEBAPP_URL)
+        except Exception as e:
+            logger.warning("Failed to set menu button: %s", e)
+
     # Run uvicorn as a concurrent asyncio task with graceful shutdown
     import uvicorn
 
@@ -137,6 +168,7 @@ async def main():
         await asyncio.gather(
             dp.start_polling(bot),
             server.serve(),
+            purge_expired_messages(),
         )
     except asyncio.CancelledError:
         pass  # Expected on shutdown

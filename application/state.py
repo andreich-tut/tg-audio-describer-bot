@@ -146,13 +146,24 @@ async def initialize_state() -> None:
     db = _get_db()
     await db.init_db()
     await migrate_legacy_data()
-    logger.info("State system initialized (SQLite backend)")
+
+    # Initialize Redis connection and verify connectivity
+    from infrastructure.redis_client import ping_redis
+
+    redis_ok = await ping_redis()
+    if redis_ok:
+        logger.info("State system initialized (SQLite backend + Redis)")
+    else:
+        logger.warning("State system initialized (SQLite backend only - Redis unavailable)")
 
 
 async def shutdown_state() -> None:
-    """Close database connections."""
+    """Close database and Redis connections."""
     db = _get_db()
     await db.close()
+    from infrastructure.redis_client import close_redis
+
+    await close_redis()
 
 
 # Legacy alias
