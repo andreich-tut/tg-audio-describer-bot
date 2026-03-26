@@ -129,7 +129,7 @@ DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE", "ru")  # Supported: 'ru', 'en'
 # Web API
 # ──────────────────────────────────────────────
 WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "8080"))
-WARP_PROXY = os.getenv("WARP_PROXY", "socks5://127.0.0.1:40000")
+WARP_PROXY = os.getenv("WARP_PROXY", "")
 
 # ──────────────────────────────────────────────
 # Logging
@@ -290,7 +290,7 @@ DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE", "ru")  # Supported: 'ru', 'en'
 # Web API
 # ──────────────────────────────────────────────
 WEBAPP_PORT = int(os.getenv("WEBAPP_PORT", "8080"))
-WARP_PROXY = os.getenv("WARP_PROXY", "socks5://127.0.0.1:40000")
+WARP_PROXY = os.getenv("WARP_PROXY", "")
 
 # ──────────────────────────────────────────────
 # Logging
