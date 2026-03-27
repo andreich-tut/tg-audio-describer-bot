@@ -94,7 +94,9 @@ docs/               — Design docs and migration notes (not part of runtime)
 - **Linting**: Ruff via pre-commit hooks, line-length 120. Pylint via `.pylintrc`.
 - **Mini App SSE**: Server-Sent Events for real-time OAuth status sync via Redis pub/sub
 
-See [PROJECT.md](docs/ai-context/PROJECT.md) for: configuration (.env), setup, running, Docker, CI/CD, bot commands, dependencies.
+See [PROJECT.md](docs/PROJECT.md) for: configuration (.env), setup, running, Docker, CI/CD, bot commands, dependencies.
+
+**Documentation:** User-facing documentation (deployment guides, reference, usage guides) is stored in `../obsidian/TG Audio Bot/` for use in Obsidian.
 
 ## Conventions
 

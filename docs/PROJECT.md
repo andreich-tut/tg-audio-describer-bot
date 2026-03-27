@@ -7,11 +7,9 @@ Shared project context for AI coding assistants. Referenced by CLAUDE.md and QWE
 **Telegram Voice/Audio Bot**: A Telegram bot that processes voice messages, audio files, and YouTube links via Whisper STT and generates responses using any OpenAI-compatible LLM API (default: OpenRouter).
 
 - **Stack**: Python 3.11+, aiogram 3, faster-whisper (local) or Groq (cloud) for STT, OpenAI SDK for LLM
-- **Architecture**: Async event-driven (asyncio), SQLite database with encryption for persistence, Docker deployment with Cloudflare WARP, Redis for pub/sub and caching
+- **Architecture**: Async event-driven (asyncio), SQLite database with encryption for persistence, Docker deployment with Caddy reverse proxy (auto-HTTPS)
 - **Language**: Bilingual UI (Russian/English), per-user language setting
-- **Persistence**: 
-  - SQLite database (`data/bot.db`) with Fernet-encrypted sensitive data (OAuth tokens, API keys)
-  - Redis (AOF persistence) for pub/sub messaging and real-time updates
+- **Persistence**: SQLite database (`data/bot.db`) with Fernet-encrypted sensitive data (OAuth tokens, API keys)
 
 ## Architecture & Key Concepts
 
@@ -93,10 +91,12 @@ tools/
   split.sh          — Shell helper for audio splitting
 docker/
   Dockerfile        — Docker image definition
-  docker-entrypoint.sh — Container startup: Cloudflare WARP init → python bot.py
+  docker-entrypoint.sh — Container startup: python bot.py
   start.sh          — Build image + run container
   update.sh         — Rebuild + prune old images
-docs/               — Design docs and migration notes (not part of runtime)
+  Caddyfile         — Reverse proxy with auto-HTTPS (Let's Encrypt)
+
+**Documentation:** All user-facing documentation has been moved to `obsidian/TG Audio Bot/` for use in Obsidian. The `docs/` folder now contains only AI context files.
 ```
 
 ## Configuration
@@ -176,7 +176,7 @@ python bot.py
 
 ### Run with Docker
 ```bash
-./docker/start.sh    # Builds Docker image + runs with Cloudflare WARP
+./docker/start.sh    # Builds Docker image + runs with Caddy reverse proxy
 ./docker/update.sh   # Rebuilds + prunes old images
 ```
 

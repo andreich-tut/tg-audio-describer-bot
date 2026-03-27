@@ -38,3 +38,8 @@ www.youtube.com_cookies.txt
 webapp/node_modules/
 webapp/dist/
 webapp/.vite/
+# Obsidian vault (exported planning docs)
+obsidian-vault/
+
+# macOS
+.DS_Store

@@ -161,7 +161,7 @@ REDIS_URL=redis://localhost:6379/0  # Redis connection for pub/sub (SSE OAuth sy
 
 Without this volume mount, all user data, OAuth tokens, and settings are lost when the container is rebuilt.
 
-See [persistence.md](docs/persistence.md) for backup strategies and migration guides.
+See `obsidian/TG Audio Bot/persistence.md` for backup strategies and migration guides.
 
 ### LLM providers
 
@@ -266,6 +266,57 @@ locales/
   ru.json                       # Russian translations
 prompts/                        # System prompt and summary prompt templates (.md files)
 ```
+
+---
+
+## Deployment
+
+### Quick Deploy (Docker)
+
+```bash
+cp .env.example .env
+# Edit .env: add BOT_TOKEN, LLM_API_KEY, ENCRYPTION_KEY
+./docker/start.sh
+```
+
+See [Configuration](#configuration) for all `.env` options.
+
+### VPS Deployment (Full Guide)
+
+For production deployment on a fresh VPS with proper security (fail2ban, UFW firewall, dedicated user):
+
+1. **Server Preparation** — Install Docker, Git, fail2ban, UFW
+2. **Create Dedicated User** — Security isolation (`botuser`)
+3. **Clone & Configure** — Set up `.env` with encryption key
+4. **Deploy with Docker** — Start with automatic restart
+
+**Full guide in Obsidian:** `obsidian/TG Audio Bot/vps-setup-guide.md`
+
+**Quick commands:**
+```bash
+# Generate encryption key
+docker run --rm python:3.9-slim python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# After setup, view logs
+docker logs -f tg-audio
+
+# Backup (stop container first!)
+docker stop tg-audio
+tar -czvf bot-data-backup-$(date +%Y%m%d).tar.gz ~/tg-audio-describer/data/
+docker start tg-audio
+```
+
+### Mini App Deployment (HTTPS)
+
+For the web-based settings UI with auto-HTTPS:
+
+```bash
+# Requires domain pointing to VPS
+echo "DOMAIN=yourdomain.com" >> .env
+bash docker/start.sh  # Includes Caddy reverse proxy
+```
+
+Register Mini App with BotFather: `/newapp` → your bot → `https://yourdomain.com`
 
 ---
 
