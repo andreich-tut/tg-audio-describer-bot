@@ -13,6 +13,7 @@ __pycache__/
 *.pyo
 venv/
 .venv/
+.ruff_cache/
 
 # Temp voice files
 *.ogg
@@ -34,4 +35,6 @@ test/
 www.youtube.com_cookies.txt
 .qwen/
 .claude/
-webapp/node_modules
+webapp/node_modules/
+webapp/dist/
+webapp/.vite/
