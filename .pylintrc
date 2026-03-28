@@ -3,7 +3,7 @@
 jobs=1
 
 # Ignore migration files (Alembic conventions differ from PEP8)
-ignore=alembic/versions
+ignore-patterns=^alembic/versions/.*,
 
 [MESSAGES CONTROL]
 disable=

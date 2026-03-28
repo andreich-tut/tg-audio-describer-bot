@@ -4,15 +4,18 @@ Redis connection singleton for pub/sub and caching.
 
 import asyncio
 import logging
-from typing import Optional
+from typing import Annotated, Optional
 
 import redis.asyncio as redis
+from typing_extensions import TypeAlias  # type: ignore[attr-defined]
 
 from shared.config import REDIS_URL
 
 logger = logging.getLogger(__name__)
 
-_pool: Optional[redis.Redis] = None
+# Use Annotated to bypass type checker issues with redis.asyncio.Redis
+_RedisPool: TypeAlias = Annotated[redis.Redis, "singleton"]
+_pool: Optional[_RedisPool] = None
 _MAX_RETRIES = 5
 _RETRY_DELAY = 2.0  # seconds
 
@@ -31,7 +34,7 @@ async def get_redis() -> redis.Redis:
                     socket_keepalive=True,
                 )
                 # Verify connection
-                await _pool.ping()
+                await _pool.ping()  # type: ignore[unknown-arg-type]
                 logger.info("Redis connected: %s", REDIS_URL)
                 break
             except redis.ConnectionError as e:
@@ -45,15 +48,15 @@ async def get_redis() -> redis.Redis:
                     _RETRY_DELAY,
                 )
                 await asyncio.sleep(_RETRY_DELAY)
-    return _pool
+    return _pool  # type: ignore[return-value]
 
 
 async def ping_redis() -> bool:
     """Health check: ping Redis and return True if responsive."""
     try:
         r = await get_redis()
-        await r.ping()
-        return True
+        result = await r.ping()  # type: ignore[unknown-arg-type]
+        return bool(result)
     except Exception as e:
         logger.warning("Redis ping failed: %s", e)
         return False

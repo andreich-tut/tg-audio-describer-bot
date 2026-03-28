@@ -96,11 +96,6 @@ YT_URL_RE = re.compile(r"(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 
 # ──────────────────────────────────────────────
-# Conversation
-# ──────────────────────────────────────────────
-MAX_HISTORY = 20  # max message pairs to keep
-
-# ──────────────────────────────────────────────
 # YouTube cache
 # ──────────────────────────────────────────────
 YT_CACHE_TTL = 3600  # 1 hour

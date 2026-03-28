@@ -9,13 +9,6 @@ import logging
 import time
 from typing import Dict, Optional
 
-from application.conversation import (  # noqa: F401
-    add_to_history,
-    clear_history,
-    clear_history_async,
-    get_history,
-    get_history_async,
-)
 from application.free_uses import (  # noqa: F401
     FREE_USES_LIMIT,
     get_free_uses,

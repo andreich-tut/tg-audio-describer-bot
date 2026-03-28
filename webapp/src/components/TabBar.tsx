@@ -1,4 +1,4 @@
-export type Tab = 'notes' | 'usage' | 'settings'
+export type Tab = 'usage' | 'settings'
 
 interface TabBarProps {
   active: Tab
@@ -7,7 +7,6 @@ interface TabBarProps {
 
 export default function TabBar({ active, onChange }: TabBarProps) {
   const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'notes', label: 'History', icon: '💬' },
     { id: 'usage', label: 'Usage', icon: '📊' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
   ]

@@ -5,8 +5,8 @@ Tables:
 - users: Core user profile and preferences
 - user_settings: Key-value settings (flexible, extensible)
 - oauth_tokens: OAuth tokens (encrypted)
-- conversations: Message history (optional persistence)
 - free_uses: Free-tier usage counters
+- bot_messages: Message tracking for 48h deletion
 """
 
 from datetime import datetime
@@ -54,9 +54,6 @@ class User(Base):
     )
     oauth_tokens: Mapped[list["OAuthToken"]] = relationship(
         "OAuthToken", back_populates="user", cascade="all, delete-orphan"
-    )
-    conversations: Mapped[list["Conversation"]] = relationship(
-        "Conversation", back_populates="user", cascade="all, delete-orphan"
     )
     free_use: Mapped[Optional["FreeUse"]] = relationship(
         "FreeUse", back_populates="user", uselist=False, cascade="all, delete-orphan"
@@ -130,30 +127,6 @@ class OAuthToken(Base):
 
     def __repr__(self) -> str:
         return f"<OAuthToken(user_id={self.user_id}, provider={self.provider})>"
-
-
-class Conversation(Base):
-    """Conversation history messages.
-
-    Stores user messages and assistant responses for context.
-    Automatically trimmed to MAX_HISTORY entries per user.
-    """
-
-    __tablename__ = "conversations"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
-    role: Mapped[str] = mapped_column(String(20), nullable=False)  # 'user' or 'assistant'
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="conversations")
-
-    __table_args__ = (Index("idx_conversations_user_timestamp", "user_id", "timestamp"),)
-
-    def __repr__(self) -> str:
-        return f"<Conversation(user_id={self.user_id}, role={self.role})>"
 
 
 class FreeUse(Base):

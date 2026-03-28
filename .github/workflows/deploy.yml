@@ -36,4 +36,4 @@ jobs:
           script: |
             cd /home/botuser/tg-audio-describer-bot
             git pull origin main
-            ./docker/update.sh
+            ./scripts/update.sh

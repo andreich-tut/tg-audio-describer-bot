@@ -65,7 +65,6 @@ ln -s $(pwd)/skills .qwen/skills
 | `/start`   | Help and available commands                            |
 | `/mode`    | Switch mode: chat / transcribe only / Obsidian note    |
 | `/stop`    | Cancel current processing (also works as plain text)   |
-| `/clear`   | Clear conversation history                             |
 | `/model`   | Show current LLM and Whisper models                    |
 | `/ping`    | Check LLM API availability                             |
 | `/limits`  | Show free-tier API usage (OpenRouter, Groq)            |
@@ -206,14 +205,13 @@ Notes are saved as `YYYY-MM-DD-title.md` with YAML front-matter.
 
 - Set `ALLOWED_USERS` in `.env` to restrict access to specific Telegram IDs
 - Find your ID: message [@userinfobot](https://t.me/userinfobot)
-- Conversation history is in-memory only — cleared on restart
 
 ## Architecture
 
 ```
 Voice message → download .ogg → STT (local: faster-whisper / cloud: Groq) → text
                                                                               |
-                                         chat: text + history → LLM API → reply
+                                         chat: text → LLM API → reply
                                          transcribe: return text as-is
                                          note: LLM → Markdown → Telegram + vault
 ```
@@ -227,7 +225,6 @@ bot.py                          # Entrypoint: bot init, router assembly
 shared/                         # Cross-cutting: config, i18n, keyboards, utils
 application/
   state.py                      # Runtime in-memory state + re-exports
-  conversation.py               # Conversation history CRUD
   user_settings.py              # Per-user settings CRUD
   free_uses.py / oauth_state.py # Free-use counters, OAuth token state
   pipelines/                    # audio.py, text.py, youtube.py — processing pipelines
@@ -253,7 +250,7 @@ prompts/                        # System prompt and summary prompt templates (.m
 ```bash
 cp .env.example .env
 # Edit .env: add BOT_TOKEN, LLM_API_KEY, ENCRYPTION_KEY
-./docker/start.sh
+./scripts/start.sh
 ```
 
 See [Configuration](#configuration) for all `.env` options.
@@ -290,7 +287,7 @@ For the web-based settings UI with auto-HTTPS:
 ```bash
 # Requires domain pointing to VPS
 echo "DOMAIN=yourdomain.com" >> .env
-bash docker/start.sh  # Includes Caddy reverse proxy
+bash scripts/start.sh  # Includes Caddy reverse proxy
 ```
 
 Register Mini App with BotFather: `/newapp` → your bot → `https://yourdomain.com`

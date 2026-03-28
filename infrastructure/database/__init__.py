@@ -5,12 +5,11 @@ Provides persistent storage for:
 - User settings and preferences
 - OAuth tokens (encrypted)
 - API keys (encrypted)
-- Conversation history (optional persistence)
 - Free-tier usage counters
 """
 
 from infrastructure.database.database import DATABASE_URL, Database, get_db
-from infrastructure.database.models import Base, Conversation, FreeUse, OAuthToken, User, UserSetting
+from infrastructure.database.models import Base, FreeUse, OAuthToken, User, UserSetting
 
 __all__ = [
     "DATABASE_URL",
@@ -18,7 +17,6 @@ __all__ = [
     "User",
     "UserSetting",
     "OAuthToken",
-    "Conversation",
     "FreeUse",
     "Database",
     "get_db",

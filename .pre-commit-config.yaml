@@ -22,17 +22,19 @@ repos:
     hooks:
       - id: eslint
         name: ESLint (frontend)
-        entry: bash -c 'cd webapp && npm run lint'
+        entry: bash -c 'export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && cd webapp && ./node_modules/.bin/eslint src'
         language: system
         files: ^webapp/src/.*\.[jt]sx?$
         pass_filenames: false
+        stages: [pre-commit, manual]
 
       - id: typecheck
         name: TypeScript typecheck (frontend)
-        entry: bash -c 'cd webapp && npm run typecheck'
+        entry: bash -c 'export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && cd webapp && ./node_modules/.bin/tsc --noEmit'
         language: system
         files: ^webapp/src/.*\.[jt]sx?$
         pass_filenames: false
+        stages: [pre-commit, manual]
 
       - id: bot-import-check
         name: Bot import check
@@ -40,6 +42,7 @@ repos:
         language: system
         files: \.py$
         pass_filenames: false
+        stages: [pre-commit, manual]
 
       - id: bump-version
         name: Bump patch version
@@ -47,3 +50,4 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+        stages: [pre-commit]

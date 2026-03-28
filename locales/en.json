@@ -9,7 +9,6 @@
       "commands_header": "Commands:",
       "mode": "/mode — select mode (chat / transcription / Obsidian note)",
       "stop": "/stop — stop current processing (or type \"stop\")",
-      "clear": "/clear — clear conversation history",
       "model": "/model — current model",
       "ping": "/ping — check LLM API",
       "limits": "/limits — free API limits",
@@ -30,9 +29,6 @@
       "current_mode": "Current mode: {mode}",
       "select_mode": "Select mode:",
       "unknown_mode": "Unknown mode."
-    },
-    "clear": {
-      "history_cleared": "🗑 Conversation history cleared."
     },
     "model": {
       "llm_model": "🤖 Model: `{llm_model}`",
@@ -272,19 +268,8 @@
   },
   "tma": {
     "tabs": {
-      "notes": "History",
       "usage": "Usage",
       "settings": "Settings"
-    },
-    "notes": {
-      "title": "Conversation History",
-      "empty": "No messages yet. Send a voice message or text to the bot to start a conversation.",
-      "clear": "Clear History",
-      "clear_confirm": "Are you sure you want to clear all conversation history?",
-      "cleared": "History cleared",
-      "you": "You",
-      "bot": "Bot",
-      "messages_count": "{count} messages"
     },
     "usage": {
       "title": "Usage & Limits",

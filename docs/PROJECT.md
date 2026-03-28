@@ -171,8 +171,8 @@ python bot.py
 
 ### Run with Docker
 ```bash
-./docker/start.sh    # Builds Docker image + runs with Caddy reverse proxy
-./docker/update.sh   # Rebuilds + prunes old images
+./scripts/start.sh    # Builds Docker image + runs with Caddy reverse proxy
+./scripts/update.sh   # Rebuilds + prunes old images
 ```
 
 **Data persistence:** `./data` directory is automatically created and mounted as volume.

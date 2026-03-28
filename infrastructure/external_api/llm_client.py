@@ -10,7 +10,7 @@ from typing import Any
 
 import openai
 
-from application.state import add_to_history, get_history, get_user_setting_async
+from application.state import get_user_setting_async
 from shared.config import (
     DEFAULT_LANGUAGE,
     LLM_API_KEY,
@@ -84,12 +84,8 @@ async def _chat_with_retry(client: openai.AsyncOpenAI, **kwargs) -> Any:  # type
 
 
 async def ask_ollama(user_id: int, user_message: str, locale: str = DEFAULT_LANGUAGE) -> str:
-    """Send message to LLM with conversation history, return full response."""
-    add_to_history(user_id, "user", user_message)
-
-    logger.info(
-        "LLM request: user_id=%d, history_len=%d, input_len=%d", user_id, len(get_history(user_id)), len(user_message)
-    )
+    """Send message to LLM, return response without conversation history."""
+    logger.info("LLM request: user_id=%d, input_len=%d", user_id, len(user_message))
     t0 = time.time()
 
     client = await _get_client(user_id)
@@ -98,7 +94,7 @@ async def ask_ollama(user_id: int, user_message: str, locale: str = DEFAULT_LANG
         client,
         model=model,
         max_tokens=4096,
-        messages=[{"role": "system", "content": SYSTEM_PROMPT}] + get_history(user_id),
+        messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
     )
 
     elapsed = time.time() - t0
@@ -107,7 +103,6 @@ async def ask_ollama(user_id: int, user_message: str, locale: str = DEFAULT_LANG
         assistant_text = t("llm.empty_response", locale)
 
     logger.info("LLM response: user_id=%d, %.1fs, response_len=%d", user_id, elapsed, len(assistant_text))
-    add_to_history(user_id, "assistant", assistant_text)
     return assistant_text
 
 

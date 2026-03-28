@@ -5,7 +5,6 @@ Higher-level LLM operations: ask_ollama, summarize_ollama, format_note_ollama.
 import logging
 import time
 
-from application.state import add_to_history, get_history
 from infrastructure.external_api.llm_client import _chat_with_retry, _get_client, _get_model
 from shared.config import DEFAULT_LANGUAGE, MAX_SUMMARY_TEXT, NOTE_PROMPT, SUMMARY_PROMPTS
 from shared.i18n import t
@@ -14,12 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 async def ask_ollama(user_id: int, user_message: str, locale: str = DEFAULT_LANGUAGE) -> str:
-    """Send message to LLM with conversation history, return full response."""
-    add_to_history(user_id, "user", user_message)
-
-    logger.info(
-        "LLM request: user_id=%d, history_len=%d, input_len=%d", user_id, len(get_history(user_id)), len(user_message)
-    )
+    """Send message to LLM, return response."""
+    logger.info("LLM request: user_id=%d, input_len=%d", user_id, len(user_message))
     t0 = time.time()
 
     from shared.config import SYSTEM_PROMPT
@@ -30,7 +25,10 @@ async def ask_ollama(user_id: int, user_message: str, locale: str = DEFAULT_LANG
         client,
         model=model,
         max_tokens=4096,
-        messages=[{"role": "system", "content": SYSTEM_PROMPT}] + get_history(user_id),
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
     )
 
     elapsed = time.time() - t0
@@ -39,7 +37,6 @@ async def ask_ollama(user_id: int, user_message: str, locale: str = DEFAULT_LANG
         assistant_text = t("llm.empty_response", locale)
 
     logger.info("LLM response: user_id=%d, %.1fs, response_len=%d", user_id, elapsed, len(assistant_text))
-    add_to_history(user_id, "assistant", assistant_text)
     return assistant_text
 
 

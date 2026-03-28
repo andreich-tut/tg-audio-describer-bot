@@ -107,5 +107,8 @@ See [PROJECT.md](docs/PROJECT.md) for: configuration (.env), setup, running, Doc
 - **Skill recognition**: When user types a `/` command (e.g., `/commit-name`), immediately invoke the `skill` tool with the command name (without the `/`). Do NOT execute the command manually.
 - Available skills are in `skills/` directory, symlinked to `.qwen/skills` and `.claude/skills`.
 
-## Qwen Added Memories
-- Do not add Co-authored-by lines when suggesting git commit messages
+## Important Rules
+
+- **Post-edit checks**: After every code edition, the user must be reminded to run `@scripts/run-checks.sh` to verify the changes pass all linting and type checks.
+- **No automatic package installation**: The assistant must NOT install any dependencies or packages automatically. The assistant should inform the user what needs to be installed and let the user install it manually.
+- **Token leak warnings**: The assistant must alert the user about any potential token or secret leaks in the code (e.g., hardcoded API keys, tokens, credentials).

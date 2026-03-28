@@ -25,12 +25,10 @@ class Database:
         self.async_session_maker = async_sessionmaker(self.engine, class_=AsyncSession, expire_on_commit=False)
 
         from infrastructure.database.bot_message_repo import BotMessageRepo
-        from infrastructure.database.conversation_repo import ConversationRepo
         from infrastructure.database.oauth_repo import OAuthRepo
         from infrastructure.database.user_repo import UserRepo
 
         self._users = UserRepo(self.async_session_maker)
-        self._conv = ConversationRepo(self.async_session_maker)
         self._oauth = OAuthRepo(self.async_session_maker)
         self._bot_messages = BotMessageRepo(self.async_session_maker)
 
@@ -56,11 +54,6 @@ class Database:
     delete_setting = property(lambda self: self._users.delete_setting)
     delete_settings_section = property(lambda self: self._users.delete_settings_section)
     get_all_settings = property(lambda self: self._users.get_all_settings)
-
-    # ── Conversation ──────────────────────────────────────────────────────────
-    add_conversation_message = property(lambda self: self._conv.add_conversation_message)
-    get_conversation_history = property(lambda self: self._conv.get_conversation_history)
-    clear_conversation = property(lambda self: self._conv.clear_conversation)
 
     # ── OAuth / free uses / migration ─────────────────────────────────────────
     get_oauth_token = property(lambda self: self._oauth.get_oauth_token)

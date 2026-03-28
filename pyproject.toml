@@ -1,6 +1,6 @@
 [project]
 name = "tg-audio-describer-bot"
-version = "0.1.134"
+version = "0.1.145"
 dependencies = [
     "redis[hiredis] >= 5.0",
     "sse-starlette >= 2.0",
@@ -21,7 +21,6 @@ ignore = ["E501"]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 include = ["bot.py", "app_runner.py", "application", "infrastructure", "interfaces", "shared"]
-exclude = ["**/__pycache__", ".venv"]
 venvPath = "."
 venv = ".venv"
 
