@@ -6,20 +6,23 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  - repo: https://github.com/pycqa/pylint
-    rev: v3.3.4
-    hooks:
-      - id: pylint
-        args: [--rcfile=.pylintrc]
-
-  # Pyright for static type checking and import validation
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.396
-    hooks:
-      - id: pyright
-
   - repo: local
     hooks:
+      - id: pylint
+        name: Run pylint
+        entry: bash -c './.venv/bin/pylint --rcfile=.pylintrc $(git ls-files "*.py")'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit, manual]
+
+      # Pyright for static type checking and import validation
+      - id: pyright
+        name: Run pyright
+        entry: bash -c './.venv/bin/pyright'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit, manual]
+
       - id: pytest
         name: Run pytest tests
         entry: bash -c './.venv/bin/python -m pytest tests/ -v --tb=short'
@@ -45,7 +48,7 @@ repos:
 
       - id: alembic-migrations-check
         name: Check Alembic migrations (upgrade/downgrade)
-        entry: bash -c 'cd "$(git rev-parse --show-toplevel)" && python -m alembic upgrade head && python -m alembic downgrade base && python -m alembic upgrade head'
+        entry: bash -c 'cd "$(git rev-parse --show-toplevel)" && ./.venv/bin/python -m alembic upgrade head && ./.venv/bin/python -m alembic downgrade base && ./.venv/bin/python -m alembic upgrade head'
         language: system
         pass_filenames: false
         stages: [manual]

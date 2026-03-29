@@ -118,9 +118,6 @@ async def list_yadisk_folders(
         items = await list_folder(path, access_token, limit, offset)
         return [YandexDiskFolder(**item) for item in items]
 
-    except HTTPException:
-        # Re-raise HTTPExceptions from _get_yandex_token (401/403)
-        raise
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             raise HTTPException(
@@ -184,9 +181,6 @@ async def get_yadisk_folder_tree(
         tree = await build_folder_tree(root_path, access_token, max_depth=depth)
         return YandexDiskTree(**tree)
 
-    except HTTPException:
-        # Re-raise HTTPExceptions from _get_yandex_token (401/403)
-        raise
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             raise HTTPException(
