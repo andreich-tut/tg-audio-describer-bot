@@ -30,9 +30,12 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["users.user_id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
+        sqlite_if_not_exists=True,
     )
-    op.create_index("idx_bot_messages_user_created", "bot_messages", ["user_id", "created_at"], unique=False)
-    op.create_index("idx_bot_messages_user_id", "bot_messages", ["user_id"], unique=False)
+    op.create_index(
+        "idx_bot_messages_user_created", "bot_messages", ["user_id", "created_at"], unique=False, if_not_exists=True
+    )
+    op.create_index("idx_bot_messages_user_id", "bot_messages", ["user_id"], unique=False, if_not_exists=True)
 
 
 def downgrade() -> None:

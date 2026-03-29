@@ -30,6 +30,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.PrimaryKeyConstraint("user_id"),
+        sqlite_if_not_exists=True,
     )
 
     # User settings table
@@ -45,8 +46,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.user_id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("user_id", "key", name="uq_user_settings_user_id_key"),
+        sqlite_if_not_exists=True,
     )
-    op.create_index("idx_user_settings_user_id", "user_settings", ["user_id"], unique=False)
+    op.create_index("idx_user_settings_user_id", "user_settings", ["user_id"], unique=False, if_not_exists=True)
 
     # OAuth tokens table
     op.create_table(
@@ -63,8 +65,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.user_id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("user_id", "provider", name="uq_oauth_tokens_user_provider"),
+        sqlite_if_not_exists=True,
     )
-    op.create_index("idx_oauth_tokens_user_id", "oauth_tokens", ["user_id"], unique=False)
+    op.create_index("idx_oauth_tokens_user_id", "oauth_tokens", ["user_id"], unique=False, if_not_exists=True)
 
     # Conversations table
     op.create_table(
@@ -76,8 +79,11 @@ def upgrade() -> None:
         sa.Column("timestamp", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["users.user_id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
+        sqlite_if_not_exists=True,
     )
-    op.create_index("idx_conversations_user_timestamp", "conversations", ["user_id", "timestamp"], unique=False)
+    op.create_index(
+        "idx_conversations_user_timestamp", "conversations", ["user_id", "timestamp"], unique=False, if_not_exists=True
+    )
 
     # Free uses table
     op.create_table(
@@ -87,6 +93,7 @@ def upgrade() -> None:
         sa.Column("reset_at", sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(["user_id"], ["users.user_id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("user_id"),
+        sqlite_if_not_exists=True,
     )
 
 

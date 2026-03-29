@@ -10,6 +10,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.engine import reflection
 
 revision: str = "003_remove_conversations"
 down_revision: Union[str, None] = "002_bot_messages"
@@ -18,9 +19,20 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Drop the index first, then the table
-    op.drop_index("idx_conversations_user_timestamp", table_name="conversations")
-    op.drop_table("conversations")
+    # Drop the index first if it exists, then the table
+    # Use reflection to check if index exists before dropping
+    conn = op.get_bind()
+    inspector = reflection.Inspector.from_engine(conn.engine)  # type: ignore[attr-defined]
+
+    # Check if index exists before dropping
+    indexes = inspector.get_indexes("conversations")
+    if any(idx["name"] == "idx_conversations_user_timestamp" for idx in indexes):
+        op.drop_index("idx_conversations_user_timestamp", table_name="conversations")
+
+    # Check if table exists before dropping
+    tables = inspector.get_table_names()
+    if "conversations" in tables:
+        op.drop_table("conversations")
 
 
 def downgrade() -> None:
