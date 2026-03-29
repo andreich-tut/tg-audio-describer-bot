@@ -24,6 +24,7 @@ User sends voice/audio → bot downloads file → Whisper transcribes (local GPU
 ### Project Structure
 ```
 bot.py              — Entrypoint: creates Bot/Dispatcher, registers routers, starts polling
+app_runner.py       — Mini App backend: SSE events, OAuth sync, API endpoints
 shared/
   config.py         — Env loading, constants, logging (rotating file + console), access control
   i18n.py           — Internationalization: t(), get_user_locale(), detect_language_from_telegram()
@@ -32,7 +33,6 @@ shared/
   version.py        — Reads __version__ from pyproject.toml
 application/
   state.py          — Runtime in-memory state + re-exports from sub-modules; initialize_state()
-  conversation.py   — Conversation history CRUD (sync + async wrappers)
   user_settings.py  — Per-user settings CRUD (sync + async wrappers)
   free_uses.py      — Free-use counter CRUD (sync + async wrappers)
   oauth_state.py    — OAuth token storage and get_or_create_user()
@@ -46,11 +46,11 @@ application/
     rate_limiter.py — Rate limit checking: OpenRouter key info + cached Groq headers
 infrastructure/
   database/
-    models.py       — SQLAlchemy ORM models (users, settings, oauth_tokens, conversations, free_uses)
+    models.py       — SQLAlchemy ORM models (users, settings, oauth_tokens, free_uses, bot_messages)
     database.py     — Async Database class with repo delegation; init_db(), close()
     user_repo.py    — UserRepo: user + settings CRUD
-    conversation_repo.py — ConversationRepo: history CRUD
     oauth_repo.py   — OAuthRepo: OAuth token CRUD
+    bot_message_repo.py — BotMessageRepo: message tracking for 48h deletion
     encryption.py   — Fernet encryption for sensitive data (OAuth tokens, API keys)
     migrations/     — SQLAlchemy migration scripts
   external_api/
@@ -72,6 +72,18 @@ interfaces/telegram/
     settings_ui.py  — Settings keyboard/text builders, key metadata
     settings_oauth.py — OAuth login/disconnect callbacks for Yandex.Disk
     oauth_callback.py — OAuth deep-link handler: /start oauth_<code>_<state>
+    menu_button.py  — Menu button handler
+  middleware/
+    message_tracker.py — Message tracking middleware
+interfaces/webapp/
+  app.py            — FastAPI application
+  auth.py           — Auth middleware
+  dependencies.py   — Dependency injection
+  schemas.py        — Pydantic schemas
+  routes/
+    oauth.py        — OAuth endpoints
+    settings.py     — Settings API
+    usage.py        — Usage stats API
 prompts/
   system.md         — Main chat system prompt
   summary_brief.md  — Brief YouTube summary prompt
@@ -200,7 +212,6 @@ python bot.py
 | `/stop` | `commands.py` | Cancel active processing task (also: "stop" / "стоп" text) |
 | `/clear` | `commands.py` | Clears user's conversation history |
 | `/model` | `commands.py` | Shows current LLM_MODEL and WHISPER_MODEL |
-| `/savedoc` | `commands.py` | Toggle Google Docs saving (opt-in) |
 | `/ping` | `diagnostics.py` | Tests LLM API connection |
 | `/limits` | `diagnostics.py` | Shows OpenRouter + Groq free-tier usage |
 | `/lang` | `diagnostics.py` | Inline keyboard to switch UI language (ru/en) |
@@ -239,7 +250,6 @@ Default set via `DEFAULT_LANGUAGE=ru` in `.env`. Users can switch per-session wi
 
 ## Code Notes
 
-- **Conversation history**: Trimmed to last MAX_HISTORY (20) pairs to avoid context overflow
 - **Message splitting**: Responses >4000 chars split into multiple Telegram messages
 - **Async**: Uses asyncio + aiogram for non-blocking I/O
 - **Cancellation**: Active tasks stored in `application.state.active_tasks`, cancellable via `/stop`
@@ -247,6 +257,7 @@ Default set via `DEFAULT_LANGUAGE=ru` in `.env`. Users can switch per-session wi
 - **Error handling**: Exceptions logged and user notified in chat
 - **Persistence**: SQLite database with encryption (data persists across restarts)
 - **i18n**: All UI strings in `locales/{ru,en}.json`, accessed via `shared.i18n.t(key, locale)`
+- **Message tracking**: Messages tracked in `bot_messages` table for 48h deletion window
 
 ## Dependencies
 - `aiogram>=3.10` — Telegram bot framework (async)

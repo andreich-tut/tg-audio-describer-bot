@@ -20,22 +20,6 @@ repos:
 
   - repo: local
     hooks:
-      - id: eslint
-        name: ESLint (frontend)
-        entry: bash -c 'export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && cd webapp && ./node_modules/.bin/eslint src'
-        language: system
-        files: ^webapp/src/.*\.[jt]sx?$
-        pass_filenames: false
-        stages: [pre-commit, manual]
-
-      - id: typecheck
-        name: TypeScript typecheck (frontend)
-        entry: bash -c 'export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && cd webapp && ./node_modules/.bin/tsc --noEmit'
-        language: system
-        files: ^webapp/src/.*\.[jt]sx?$
-        pass_filenames: false
-        stages: [pre-commit, manual]
-
       - id: bot-import-check
         name: Bot import check
         entry: bash -c './.venv/bin/python3 -c "from bot import main; import shared.i18n; import shared.utils; import interfaces.telegram.handlers"'

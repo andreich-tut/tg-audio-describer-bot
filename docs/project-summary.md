@@ -4,7 +4,7 @@
 
 The system is a Python Telegram bot that transcribes voice/audio messages and processes them through an LLM. It's structured in four clean layers:
 
-**Interface Layer** sits at the top and has two surfaces: an aiogram 3 Telegram bot (polling-based, all message handlers) and a FastAPI web app (serving the Telegram Mini App REST API, both running inside the same process via uvicorn). A React/TypeScript Mini App served by Caddy is the user-facing settings UI.
+**Interface Layer** sits at the top: an aiogram 3 Telegram bot (polling-based, all message handlers) and a FastAPI web app (serving a REST API for settings, both running inside the same process via uvicorn). Caddy reverse-proxies API requests to the bot.
 
 **Application Layer** is the orchestration core. Three pipelines — `audio.py`, `text.py`, `youtube.py` — coordinate the full request lifecycle. Supporting modules handle conversation history (with a 20-message rolling window), per-user state (active tasks, mode, language), user settings, free-tier tracking, and OAuth state.
 
@@ -46,9 +46,7 @@ The system is a Python Telegram bot that transcribes voice/audio messages and pr
 
 - **`interfaces/webapp/`** — FastAPI app with auth via Telegram's initData HMAC validation.
 
-- **`webapp/`** — React app providing Settings, Notes, and Usage tabs in the Telegram Mini App.
-
-- **Caddy** — Reverse-proxies `/api/*` to FastAPI and serves the SPA at all other paths.
+- **Caddy** — Reverse-proxies `/api/*` to FastAPI.
 
 ## 4. System Architecture Flowchart
 

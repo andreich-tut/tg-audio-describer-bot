@@ -4,10 +4,25 @@
         reverse_proxy bot:8080
     }
 
-    # Serve React SPA — all other paths return index.html
+    # Swagger UI and OpenAPI documentation
+    handle /docs {
+        reverse_proxy bot:8080
+    }
+
+    handle /docs/* {
+        reverse_proxy bot:8080
+    }
+
+    handle /redoc {
+        reverse_proxy bot:8080
+    }
+
+    handle /openapi.json {
+        reverse_proxy bot:8080
+    }
+
+    # Default: return 404 for all other paths
     handle {
-        root * /srv/webapp
-        try_files {path} /index.html
-        file_server
+        respond 404
     }
 }

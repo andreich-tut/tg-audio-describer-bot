@@ -34,7 +34,6 @@ shared/
   version.py        — Reads __version__ from pyproject.toml
 application/
   state.py          — Runtime in-memory state + re-exports from sub-modules; initialize_state()
-  conversation.py   — Conversation history CRUD (sync + async wrappers)
   user_settings.py  — Per-user settings CRUD (sync + async wrappers)
   free_uses.py      — Free-use counter CRUD (sync + async wrappers)
   oauth_state.py    — OAuth token storage and get_or_create_user()
@@ -48,11 +47,11 @@ application/
     rate_limiter.py — Rate limit checking: OpenRouter key info + cached Groq headers
 infrastructure/
   database/
-    models.py       — SQLAlchemy ORM models (users, settings, oauth_tokens, conversations, free_uses)
+    models.py       — SQLAlchemy ORM models (users, settings, oauth_tokens, free_uses, bot_messages)
     database.py     — Async Database class with repo delegation; init_db(), close()
     user_repo.py    — UserRepo: user + settings CRUD
-    conversation_repo.py — ConversationRepo: history CRUD
     oauth_repo.py   — OAuthRepo: OAuth token CRUD
+    bot_message_repo.py — BotMessageRepo: message tracking for 48h deletion
     encryption.py   — Fernet encryption for sensitive data (OAuth tokens, API keys)
     migrations/     — SQLAlchemy migration scripts
   external_api/
@@ -61,6 +60,7 @@ infrastructure/
     llm_operations.py — High-level LLM ops: ask_ollama(), summarize_ollama(), format_note_ollama()
     youtube.py      — YouTube audio download (yt-dlp), optional whisperX diarization
     yandex_client.py — Yandex OAuth 2.0 flow for Yandex.Disk access
+  redis_client.py   — Redis connection singleton with retry logic, pub/sub for SSE
   storage/
     obsidian.py     — Obsidian note saving: local vault or Yandex.Disk WebDAV (OAuth)
 interfaces/telegram/
@@ -73,18 +73,27 @@ interfaces/telegram/
     settings_ui.py  — Settings keyboard/text builders, key metadata
     settings_oauth.py — OAuth login/disconnect callbacks for Yandex.Disk
     oauth_callback.py — OAuth deep-link handler: /start oauth_<code>_<state>
-  middlewares/      — Request middlewares (i18n, user tracking)
-prompts/            — System prompts for LLM (chat, summary, note formatting)
+    menu_button.py  — Menu button handler
+  middleware/
+    message_tracker.py — Message tracking middleware
+interfaces/webapp/
+  app.py            — FastAPI application
+  auth.py           — Auth middleware
+  dependencies.py   — Dependency injection
+  schemas.py        — Pydantic schemas
+  routes/
+    oauth.py        — OAuth endpoints
+    settings.py     — Settings API
+    usage.py        — Usage stats API
+prompts/            — System prompts for LLM: system.md, note.md, summary_*.md
 locales/            — UI strings: ru.json, en.json
 tools/              — CLI utilities: audio splitting, transcription, diarization
 docker/             — Dockerfile, entrypoint, start/update scripts, docker-compose.yml
-webapp/             — Mini App: React + Vite frontend, Python SSE backend
-docs/               — Design docs and migration notes (not part of runtime)
+docs/               — AI context files (PROJECT.md, project-summary.md, code-churn.md)
 ```
 
 ## Code Notes
 
-- **Conversation history**: Trimmed to last MAX_HISTORY (20) pairs to avoid context overflow
 - **Message splitting**: Responses >4000 chars split into multiple Telegram messages
 - **Async**: Uses asyncio + aiogram for non-blocking I/O
 - **Cancellation**: Active tasks stored in `application.state.active_tasks`, cancellable via `/stop`
@@ -92,6 +101,7 @@ docs/               — Design docs and migration notes (not part of runtime)
 - **i18n**: All UI strings in `locales/{ru,en}.json`, accessed via `shared.i18n.t(key, locale)`
 - **Linting**: Ruff via pre-commit hooks, line-length 120. Pylint via `.pylintrc`.
 - **Mini App SSE**: Server-Sent Events for real-time OAuth status sync via Redis pub/sub
+- **Message tracking**: Messages tracked in `bot_messages` table for 48h deletion window
 
 See [PROJECT.md](docs/PROJECT.md) for: configuration (.env), setup, running, Docker, CI/CD, bot commands, dependencies.
 

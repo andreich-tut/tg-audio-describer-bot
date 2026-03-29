@@ -1,6 +1,6 @@
 [project]
 name = "tg-audio-describer-bot"
-version = "0.1.145"
+version = "0.1.146"
 dependencies = [
     "redis[hiredis] >= 5.0",
     "sse-starlette >= 2.0",

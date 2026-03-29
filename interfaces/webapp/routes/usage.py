@@ -16,7 +16,7 @@ router = APIRouter(tags=["usage"])
 logger = logging.getLogger(__name__)
 
 
-@router.get("/usage")
+@router.get("/usage", response_model=dict)
 async def get_usage(
     user_id: int = Depends(get_current_user_id),
     db: Database = Depends(get_database),
