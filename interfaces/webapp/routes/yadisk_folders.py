@@ -7,11 +7,13 @@ Provides endpoints for:
 """
 
 import logging
+from datetime import datetime
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from infrastructure.database.database import Database
+from infrastructure.external_api.yandex_client import refresh_access_token
 from infrastructure.external_api.yandex_disk_client import (
     build_folder_tree,
     list_folder,
@@ -26,21 +28,58 @@ logger = logging.getLogger(__name__)
 async def _get_yandex_token(user_id: int, db: Database) -> str:
     """
     Get valid Yandex OAuth access token for user.
+    Automatically refreshes the token if expired.
 
     Raises:
         HTTPException(401): If no OAuth token found
         HTTPException(403): If token is invalid/expired and refresh fails
     """
-    token = await db.get_oauth_token(user_id, "yandex")
-    if not token:
+    token_data = await db.get_oauth_token(user_id, "yandex")
+    if not token_data:
         raise HTTPException(
             status_code=401,
             detail="Yandex.Disk OAuth not connected. Please connect your account first.",
         )
 
-    # Token refresh is handled automatically by the database layer
-    # when accessing token.access_token if it's expired
-    return token.access_token
+    # Check if token is expired and refresh if needed
+    expires_at = token_data.get("expires_at")
+    refresh_token = token_data.get("refresh_token")
+
+    # Determine if token is expired
+    is_expired = False
+    if expires_at:
+        # Handle both datetime objects and ISO format strings
+        if isinstance(expires_at, datetime):
+            is_expired = expires_at <= datetime.now()
+        elif isinstance(expires_at, str):
+            try:
+                is_expired = datetime.fromisoformat(expires_at) <= datetime.now()
+            except (ValueError, TypeError):
+                # If parsing fails, assume not expired to avoid unnecessary refresh
+                is_expired = False
+
+    if refresh_token and is_expired:
+        # Token is expired, try to refresh
+        new_token = await refresh_access_token(refresh_token)
+        if new_token:
+            # Save refreshed token back to database
+            await db.set_oauth_token(
+                user_id,
+                "yandex",
+                access_token=new_token.access_token,
+                refresh_token=new_token.refresh_token or refresh_token,
+                expires_at=new_token.expires_at,
+            )
+            logger.info("Yandex.Disk token refreshed for user_id=%d", user_id)
+            return new_token.access_token
+        else:
+            # Refresh failed
+            raise HTTPException(
+                status_code=403,
+                detail="Yandex.Disk OAuth token expired. Please reconnect your account.",
+            )
+
+    return token_data["access_token"]
 
 
 @router.get("/yadisk/folders", response_model=list[YandexDiskFolder])
@@ -79,6 +118,9 @@ async def list_yadisk_folders(
         items = await list_folder(path, access_token, limit, offset)
         return [YandexDiskFolder(**item) for item in items]
 
+    except HTTPException:
+        # Re-raise HTTPExceptions from _get_yandex_token (401/403)
+        raise
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             raise HTTPException(
@@ -142,6 +184,9 @@ async def get_yadisk_folder_tree(
         tree = await build_folder_tree(root_path, access_token, max_depth=depth)
         return YandexDiskTree(**tree)
 
+    except HTTPException:
+        # Re-raise HTTPExceptions from _get_yandex_token (401/403)
+        raise
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             raise HTTPException(

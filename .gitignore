@@ -28,9 +28,10 @@ venv/
 models/
 ~/.cache/huggingface/
 
-# Logs and tests
+# Logs
 logs/
-tests/
+
+# Test files
 test/
 www.youtube.com_cookies.txt
 .qwen/
