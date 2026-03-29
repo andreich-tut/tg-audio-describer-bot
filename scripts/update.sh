@@ -27,6 +27,16 @@ $COMPOSE up -d
 echo "Waiting for container to start..."
 sleep 3
 
+# Get the NEW container ID after rebuild (container ID changes after up -d)
+CONTAINER_NAME=$($COMPOSE ps -q bot 2>/dev/null | head -n1)
+if [ -z "$CONTAINER_NAME" ]; then
+  CONTAINER_NAME=$($COMPOSE ps -q 2>/dev/null | head -n1)
+fi
+if [ -z "$CONTAINER_NAME" ]; then
+  echo "❌ No running container found!"
+  exit 1
+fi
+
 # Run database migrations
 echo "Running database migrations..."
 if docker exec "$CONTAINER_NAME" python3 -m alembic upgrade head; then
